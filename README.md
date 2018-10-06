@@ -1,15 +1,16 @@
 # Tasty Basic
 
 ## Introduction
-Tasty Basic is a basic interpreter for the SBC v2, based on the Z80 port of Palo Alto Tiny Basic ([Gabbard, 2017; Rauskolb, 1976; Wang, 1976](##References)).
+Tasty Basic is a basic interpreter for the SBC v2, based on the Z80 port of Palo Alto Tiny Basic
+([Gabbard, 2017; Rauskolb, 1976; Wang, 1976](##References)).
 
 ## Tasty Basic Language
 The Tasty Basic language is based on Palo Alto Tiny Basic, as described in the December 1976
 issue of Interface Age ([Rauskolb, 1976](##References)). As such, Tasty Basic shares many of the
 same limitations as Palo Alto Basic. All numbers are integers and must be less than or
-equal to 32767, and support for only 26 variables denoted by letters A through Z. Contrary
-to Tiny Basic, however, Tasty Basic provides functions to read and write memory locations,
-and allows interaction with I/O ports.
+equal to 32767, and support for only 26 variables denoted by letters A through Z. In addition
+to Tiny Basic's `ABS(n)`, `RND(n)` and `SIZE` functions, however, Tasty Basic provides functions
+to read and write memory locations, and allows interaction with I/O ports.
 
 ### Functions
 Tasty Basic provides the following functions to read from and write to memory locations and I/O ports:
@@ -43,9 +44,14 @@ The following example shows _TODO_
 Building the ROM image requires TASM (Telemark Assembler).
 
 ## Running in Z80 Emulator
-Tasty Basic can be run in the Z80 Emulator when it is built with the -DEMULATOR flag.
+Tasty Basic can be run in the Z80 Emulator ([Moore, 2015](##References)) when it is built with
+the `-Dzemu` flag:
 
-Ensure that TTY0 is configured as following in the Z80 Emulator:
+```tasm.exe -t80 -g3 -fFF -Dzemu tastybasic.asm tastybasic.bin tastybasic.lst```
+
+Then load the resulting `tastybasic.bin` image in the emulator at address 0, bank 0.
+
+Before running, ensure that the `TTY0` device is configured as following in the Z80 Emulator:
 
 **I/O Devices**
 

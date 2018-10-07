@@ -24,6 +24,122 @@ start:
                 ld a,0ffh
                 jp init
 
+comp:
+                ld a,h                      ; ** Compare **
+                cp d                        ; compare hl with de
+                ret nz                      ; return c and z flags
+                ld a,l                      ; old a is lost
+                cp e
+                ret
+
+inputerror: ; TODO..!
+
+
+;*************************************************************
+;
+; *** DIVIDE *** SUBDE *** CHKSGN *** CHGSGN *** & CKHLDE ***
+;
+; 'DIVIDE' DIVIDES HL BY DE, RESULT IN BC, REMAINDER IN HL
+;
+; 'SUBDE' SUBSTRACTS DE FROM HL
+;
+; 'CHKSGN' CHECKS SIGN OF HL.  IF +, NO CHANGE.  IF -, CHANGE
+; SIGN AND FLIP SIGN OF B.
+;
+; 'CHGSGN' CHECKS SIGN N OF HL AND B UNCONDITIONALLY.
+;
+; 'CKHLDE' CHECKS SIGN OF HL AND DE.  IF DIFFERENT, HL AND DE
+; ARE INTERCHANGED.  IF SAME SIGN, NOT INTERCHANGED.  EITHER
+; CASE, HL DE ARE THEN COMPARED TO SET THE FLAGS.
+;*************************************************************
+divide:
+                push hl                     ; ** Divide **
+                ld l,h                      ; divide h by de
+                ld h,0h
+                call dv1
+                ld b,c                      ; save result in b
+                ld a,l                      ; (remainder + l) / de
+                pop hl
+                ld h,a
+dv1:
+                ld c,0ffh                   ; result in c
+dv2:
+                inc c                       ; dumb routine
+                call subtract               ; divide by subtract and count
+                jr nc,dv2
+                add hl,de
+                ret
+subtract:
+                ld a,l                      ; ** Subtract **
+                sub e                       ; subtract de from hl
+                ld l,a
+                ld a,h
+                sbc a,d
+                ld h,a
+                ret
+
+checksign:
+                ld a,h                      ; ** CheckSign **
+                or a                        ; check sign of hl
+                ret p
+changesign:
+                ld a,h                      ; ** ChangeSign **
+                push af
+                cpl                         ; change sign of hl
+                ld h,a
+                ld a,l
+                cpl
+                ld l,a
+                inc hl
+                pop af
+                xor h
+                jp p,qhow
+                ld a,b                      ; and also flip b
+                xor 80h
+                ld b,a
+                ret
+checksame:
+                ld a,h                      ; same sign?
+                xor d                       ; yes, compare
+                jp p,ck1                    ; no, exchange and compare
+                ex de,hl
+ck1:
+                call comp
+                ret
+
+handleerror:
+                sub a                       ; ** Error **
+                call printstr               ; print error message
+                pop de
+                ld a,(de)                   ; save the character
+                push af                     ; at where old de points
+                sub a                       ; and put a 0 (zero) there
+                ld (de),a
+                ld hl,(current)             ; get the current line number
+                push hl
+                ld a,(hl)                   ; check the value
+                inc hl
+                or (hl)
+                pop de
+                jp z,rstart                 ; if zero, just rerstart
+                ld a,(hl)                   ; if negative
+                or a
+                jp m,inputerror             ; then redo input
+                call printline              ; else print the line
+                dec de                      ; up to where the 0 is
+                pop af                      ; restore the character
+                ld (de),a
+                ld a,'?'                    ; print a ?
+                call outc
+                sub a                       ; and the rest of the line
+                call printstr
+                jp rstart
+qsorry:
+                push de                     ; ** Sorry **
+asorry:
+                ld de,sorry
+                jr handleerror
+
 ;*************************************************************
 ;
 ; *** GETLN *** FNDLN (& FRIENDS) ***
@@ -85,6 +201,40 @@ gl4:
                 call crlf                   ; redo entire line
                 jr getline
 
+findline:
+                ld a,h                      ; ** FindLine **
+                or a                        ; check the sign of hl
+                jp m,qhow                   ; it cannot be negative
+                ld de,textbegin             ; initialise the text pointer
+findlineprt:
+fl1:
+                push hl                     ; save line number
+                ld hl,(textunfilled)        ; check if we passed end
+                dec hl
+                call comp
+                pop hl                      ; retrieve line number
+                ret c                       ; c,nz passed end
+                ld a,(de)                   ; we didn't; get first byte
+                sub l                       ; is this the line?
+                ld b,a                      ; compare low order
+                inc de
+                ld a,(de)                   ; get second byte
+                sbc a,h                     ; compare high order
+                jr c,fl2                    ; no, not there yet
+                dec de                      ; else we either found it
+                or b                        ; or it's not there
+                ret                         ; nc,z:found; nc,nz:no
+findnext:
+                inc de                      ; find next line
+fl2:
+                inc de                      ; just passed first and second byte
+findskip:
+                ld a,(de)                   ; ** FindSkip **
+                cp cr                       ; try to find cr
+                jr nz,fl2                   ; keep looking
+                inc de                      ; found cr, skip over
+                jr fl1                      ; check if end of text
+
 ;*************************************************************
 ;
 ; *** PRTSTG *** QTSTG *** PRTNUM *** & PRTLN ***
@@ -120,6 +270,75 @@ prtstr1:
                 cp cr                       ; was it a cr?
                 jr nz,prtstr1               ; no, next character
                 ret                         ; yes, returns
+
+
+printnum:
+                ld b,0h                     ; ** PrintNum **
+                call checksign              ; check sign
+                jp p,pn1                    ; no sign
+                ld b,'-'
+                dec c
+pn1:
+                push de                     ; save
+                ld de, 000ah                ; decimal
+                push de                     ; save as flag
+                dec c                       ; c=spaces
+                push bc                     ; save sign & space
+pn2:
+                call divide                 ; divide hl by 10
+                ld a,b                      ; result 0?
+                or c
+                jr z,pn3                    ; yes, we got all
+                ex (sp),hl                  ; no, save remainder
+                dec l                       ; and count space
+                push hl                     ; hl is old bc
+                ld h,b                      ; mobed result to bc
+                ld l,c
+                jr pn2                      ; and divide by 10
+pn3:
+                pop bc                      ; we got all digits
+pn4:
+                dec c
+                ld a,c                      ; look at space count
+                or a
+                jp m,pn5                    ; no leading spaces
+                ld a,' '                    ; print a leading space
+                call outc
+                jr pn4                      ; any more?
+pn5:
+                ld a,b                      ; print sign
+                or a
+                call nz,outc
+                ld e,l                      ; last remainder in e
+pn6:
+                ld a,e                      ; check digit in e
+                cp lf                       ; lf is flag for no more
+                pop de
+                ret z                       ; if yes, return
+                add a,30h                   ; else convert to ascii
+                call outc                   ; and print the digit
+                jr pn6                      ; next digit
+
+printline:
+                ld a,(de)                   ; ** PrintLine **
+                ld l,a                      ; low order line number
+                inc de
+                ld a,(de)                   ; high order
+                ld h,a
+                inc de
+                ld c,04h                    ; print 4 digit line number
+                call printnum
+                ld a,' '                    ; followed by a space
+                call outc
+                sub a                       ; and the the rest
+                call printstr
+                ret
+
+qhow:
+                push de                     ; ** Error How? **
+ahow:
+                ld de,how
+                jp handleerror
 
 msg1            .db "TASTY BASIC",cr
 how             .db "HOW?",cr
@@ -176,7 +395,6 @@ st3:
                 ld a,'>'                    ; initialise prompt
                 call getline
                 jp st3
-
 
 init:
                 ld (ocsw),a                 ; enable output control switch
@@ -249,7 +467,7 @@ uart_tx_ready_loop:
                 ret
 
                .org 01000h                  ; following must be in ram
-               
+
 ocsw           .ds 1                        ; output control switch
 current        .ds 2                        ; points to current line
 stkgos         .ds 2                        ; saves sp in 'GOSUB'

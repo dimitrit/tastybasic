@@ -104,94 +104,90 @@ finish:
 ; TBI WILL ALSO HANDLE 'LET' COMMAND WITHOUT THE WORD 'LET'.
 ; THIS IS DONE BY 'DEFLT'.
 ;*************************************************************
-
-; REM:
-;         LD HL,0000H                     ;*** REM ***
-;         .DB 3EH                          ;THIS IS LIKE 'IF 0'
-; IFF:
-;         CALL 18H                         ;*** IF ***
-;         LD A,H                          ;IS THE EXPR.=0?
-;         OR L
-;         JP NZ,RUNSML                    ;NO, CONTINUE
-;         CALL FNDSKP                     ;YES, SKIP REST OF LINE
-;         JP NC,RUNTSL                    ;AND RUN THE NEXT LINE
-;         JP RSTART                       ;IF NO NEXT, RE-START
-inputerror: ; TODO..!
-; INPERR:
-;         LD HL,(STKINP)                  ;*** INPERR ***
-;         LD SP,HL                        ;RESTORE OLD SP
-;         POP HL                          ;AND OLD 'CURRNT'
-;         LD (CURRNT),HL
-;         POP DE                          ;AND OLD TEXT POINTER
-;         POP DE                          ;REDO INPUT
-;
-; INPUT:                                  ;*** INPUT ***
-; IP1:
-;         PUSH DE                         ;SAVE IN CASE OF ERROR
-;         CALL QTSTG                      ;IS NEXT ITEM A STRING?
-;         JR IP2                          ;NO
-;         CALL 38H                         ;YES, BUT FOLLOWED BY A
-;         JR C,IP4                        ;VARIABLE? NO.
-;         JR IP3                          ;YES. INPUT VARIABLE
-; IP2:
-;         PUSH DE                         ;SAVE FOR 'PRTSTG'
-;         CALL 38H                         ;MUST BE VARIABLE NOW
-;         JP C,QWHAT                      ;"WHAT?" IT IS NOT?
-;         LD A,(DE)                       ;GET READY FOR 'PRTSTR'
-;         LD C,A
-;         SUB A
-;         LD (DE),A
-;         POP DE
-;         CALL PRTSTG                     ;PRINT STRING AS PROMPT
-;         LD A,C                          ;RESTORE TEXT
-;         DEC DE
-;         LD (DE),A
-; IP3:
-;         PUSH DE                         ;SAVE TEXT POINTER
-;         EX DE,HL
-;         LD HL,(CURRNT)                  ;ALSO SAVE 'CURRNT'
-;         PUSH HL
-;         LD HL,IP1                       ;A NEGATIVE NUMBER
-;         LD (CURRNT),HL                  ;AS A FLAG
-;         LD HL,0000H                     ;SAVE SP TOO
-;         ADD HL,SP
-;         LD (STKINP),HL
-;         PUSH DE                         ;OLD HL
-;         LD A,3AH                        ;PRINT THIS TOO
-;         CALL GETLN                      ;AND GET A LINE
-;         LD DE,BUFFER                    ;POINTS TO BUFFER
-;         CALL 18H                         ;EVALUATE INPUT
-;         NOP                             ;CAN BE 'CALL ENDCHK'
-;         NOP
-;         NOP
-;         POP DE                          ;OK,GET OLD HL
-;         EX DE,HL
-;         LD (HL),E                       ;SAVE VALUE IN VAR.
-;         INC HL
-;         LD (HL),D
-;         POP HL                          ;GET OLD 'CURRNT'
-;         LD (CURRNT),HL
-;         POP DE                          ;AND OLD TEXT POINTER
-; IP4:
-;         POP AF                          ;PURGE JUNK IN STACK
-;         CALL 08H                         ;IS NEXT CH. ','?
-;         .DB ','
-;         .DB IP5-$-1
-;         JR IP1                          ;YES, MORE ITEMS.
-; IP5:
-;         CALL 30H
-; DEFLT:
-;         LD A,(DE)                       ;***  DEFLT ***
-;         CP CR                           ;EMPTY LINE IS OK
-;         JR Z,LT1                        ;ELSE IT IS 'LET'
-; LET:
-;         CALL SETVAL                     ;*** LET ***
-;         CALL 08H                         ;SET VALUE TO VAR
-;         .DB ','                          ;---DISASSEMBLE = INC L
-;         .DB LT1-$-1                      ;---DISASSEMBLE = INC BC
-;         JR LET                          ;ITEM BY ITEM
-; LT1:
-;         CALL 30H                         ;UNTIL FINISH
+rem:
+                ld hl,0000h                 ; ** Rem **
+                .db 3eh                     ; this is like 'IF 0'
+iff:
+                call expr                   ; ** If **
+                ld a,h                      ; is the expr = 0?
+                or l
+                jp nz,runsml                ; no, continue
+                call findskip               ; yes, skip rest of line
+                jp nc,runtsl                ; and run the next line
+                jp rstart                   ; if no, restart
+inputerror:
+                ld hl,(stkinp)              ; ** InputError **
+                ld sp,hl                    ; restore old sp and old current
+                pop hl
+                ld (current),hl
+                pop de                      ; and old text pointer
+                pop de                      ; redo curret
+input:
+                push de                     ; ** Input **
+                call qtstg                  ; is next item a string?
+                jr ip2                      ; no
+                call testvar                ; yes and followed by a variable?
+                jr c,ip4                    ; no
+                jr ip3                      ; yes, input variable
+ip2:
+                push de                     ; save for printstr
+                call testvar                ; must be variable
+                jp c,qwhat                  ; no, what?
+                ld a,(de)                   ; prepare for printstr
+                ld c,a
+                sub a
+                ld (de),a
+                pop de
+                call printstr               ; print string as prompt
+                ld a,c                      ; restore text
+                dec de
+                ld (de),a
+ip3:
+                push de                     ; save text pointer
+                ex de,hl
+                ld hl,(current)             ; also save current
+                push hl
+                ld hl,input
+                ld (current),hl
+                ld hl,0000h
+                add hl,sp
+                ld (stkinp),hl
+                push de
+                ld a,':'
+                call getline
+                ld de,buffer
+                call expr
+                nop                         ; ** TODO: check? **
+                nop
+                nop
+                pop de
+                ex de,hl
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                pop hl
+                ld (current),hl
+                pop de
+ip4:
+                pop af                      ; purge stack
+                call testc                  ; is next character ','?
+                .db ','
+                .db ip5-$-1
+                jr input                    ; yes, more items
+ip5:
+                call finish
+deflt:
+                ld a,(de)                   ; ** DEFLT **
+                cp cr                       ; empty line is fine
+                jr z,lt1                    ; else it's 'LET'
+let:
+                call setval                 ; ** Let **
+                call testc                  ; set value to var
+                .db ','
+                .db lt1-$-1
+                jr let                      ; item by item
+lt1:
+                call finish
 
 ;*************************************************************
 ;
@@ -542,7 +538,23 @@ ck1:
 ; 'QSORRY' AND 'ASORRY' DO SAME KIND OF THING.
 ; 'AHOW' AND 'AHOW' IN THE ZERO PAGE SECTION ALSO DO THIS.
 ;*************************************************************
-
+setval:
+                call testvar                ; ** SetVal **
+                jp c,qwhat                  ; no variable
+                push hl                     ; save address of var
+                call testc                  ; do we have =?
+                .db '='
+                .db sv1-$-1
+                call expr                   ; evaluate expression
+                ld b,h                      ; value is in bc now
+                ld c,l
+                pop hl                      ; get address
+                ld (hl),c                   ; save value
+                inc hl
+                ld (hl),b
+                ret
+sv1:
+                jp qwhat
 fin:
                 call testc                  ; test for ';'
                 .db ';'
@@ -657,6 +669,7 @@ gl3:
                 jr gl1                      ; and get next character
 gl4:
                 call crlf                   ; redo entire line
+                ld a,5eh
                 jr getline
 
 findline:
@@ -728,6 +741,38 @@ prtstr1:
                 cp cr                       ; was it a cr?
                 jr nz,prtstr1               ; no, next character
                 ret                         ; yes, returns
+qtstg:
+                call testc                  ; ** Qtstg **
+                .db 22h                     ; is it a double quote
+                .db qt3-$-1
+                ld a,22h
+qt1:
+                call printstr               ; print until another
+                cp cr
+                pop hl
+                jp z,runnxl
+qt2:
+                inc hl                      ; skip 3 bytes on return
+                inc hl
+                inc hl
+                jp (hl)                     ; return
+qt3:
+                call testc                  ; is it a single quote
+                .db 27h
+                .db qt4-$-1
+                ld a,27h
+                jr qt1
+qt4:
+                call testc                  ; is it back-arrow
+                .db '_'
+                .db qt5-$-1
+                ld a,8dh                    ; yes, cr without lf
+                call outc
+                call outc
+                pop hl                      ; return address
+                jr qt2
+qt5:
+                ret                         ; none of the above
 
 printnum:
                 ld b,0h                     ; ** PrintNum **
@@ -1094,7 +1139,7 @@ stop:
                 jp rstart
 run:
                 call endchk                 ; ** Run **
-                ld de,(textbegin)
+                ld de,textbegin
 runnxl:
                 ld hl,0h                    ; ** Run Next Line **
                 call findlineptr
@@ -1157,45 +1202,44 @@ ls1:
                 call findlineptr            ; find the next line
                 jr ls1                      ; and loop back
 
-                ; PRINT:
-                ;         LD C,06H                        ;C = # OF SPACES
-                ;         CALL 08H                         ;F NULL LIST & ";"
-                ;         .DB 3BH
-                ;         .DB PR2-$-1
-                ;         CALL CRLF                       ;GIVE CR-LF AND
-                ;         JR RUNSML                       ;CONTINUE SAME LINE
-                ; PR2:
-                ;         CALL 08H                         ;IF NULL LIST (CR)
-                ;         .DB CR
-                ;         .DB PR0-$-1
-                ;         CALL CRLF                       ;ALSO GIVE CR-LF AND
-                ;         JR RUNNXL                       ;GO TO NEXT LINE
-                ; PR0:
-                ;         CALL 08H                         ;ELSE IS IT FORMAT?
-                ;         .DB '#'
-                ;         .DB PR1-$-1
-                ;         CALL 18H                         ;YES, EVALUATE EXPR.
-                ;         LD C,L                          ;AND SAVE IT IN C
-                ;         JR PR3                          ;LOOK FOR MORE TO PRINT
-                ; PR1:
-                ;         CALL QTSTG                      ;OR IS IT A STRING?
-                ;         JR PR8                          ;IF NOT, MUST BE EXPR.
-                ; PR3:
-                ;         CALL 08H                         ;IF ",", GO FIND NEXT
-                ;         .DB ','
-                ;         .DB PR6-$-1
-                ;         CALL FIN                        ;IN THE LIST.
-                ;         JR PR0                          ;LIST CONTINUES
-                ; PR6:
-                ;         CALL CRLF                       ;LIST ENDS
-                ;         CALL 30H
-                ; PR8:
-                ;         CALL 18H                         ;EVALUATE THE EXPR
-                ;         PUSH BC
-                ;         CALL PRTNUM                     ;PRINT THE VALUE
-                ;         POP BC
-                ;         JR PR3                          ;MORE TO PRINT?
-                ;
+print:
+                ld c,6                      ; c = number of spaces
+                call testc                  ; is it a semicolon?
+                .db ';'
+                .db pr2-$-1
+                call crlf
+                jr runsml
+pr2:
+                call testc                  ; is it a cr?
+                .db cr
+                .db pr0-$-1
+                call crlf
+                jr runnxl
+pr0:
+                call testc                  ; is it format?
+                .db '#'
+                .db pr1-$-1
+                call expr
+                ld c,l
+                jr pr3
+pr1:
+                call qtstg                  ; is it a string?
+                jr pr8
+pr3:
+                call testc                  ; is it a comma?
+                .db ','
+                .db pr6-$-1
+                call fin
+                jr pr0
+pr6:
+                call crlf                   ; list ends
+                call finish
+pr8:
+                call expr                   ; evaluate the expression
+                push bc
+                call printnum
+                pop bc
+                jr pr3
 
 
 init:
@@ -1297,71 +1341,67 @@ uart_tx_ready_loop:
 tab1:                                       ; direct commands
                 .db "LIST"
                 dwa(list)
-                ;         DWA(LIST)
-                ;         .DB "RUN"
-                ;         DWA(RUN)
-                ;         .DB "NEW"
-                ;         DWA(NEW)
+                .db "RUN"
+                dwa(run)
+                .db "NEW"
+                dwa(new)
 tab2:                                       ; direct/statement
                 ; TAB2:                                   ;DIRECT/STATEMENT
                 ;         .DB "NEXT"
                 ;         DWA(NEXT)
-                ;         .DB "LET"
-                ;         DWA(LET)
-                ;         .DB "IF"
-                ;         DWA(IFF)
+                .db "LET"
+                dwa(let)
+                .db "IF"
+                dwa(iff)
                 ;         .DB "GOTO"
                 ;         DWA(GOTO)
                 ;         .DB "GOSUB"
                 ;         DWA(GOSUB)
                 ;         .DB "RETURN"
                 ;         DWA(RETURN)
-                ;         .DB "REM"
-                ;         DWA(REM)
+                .db "REM"
+                dwa(rem)
                 ;         .DB "FOR"
                 ;         DWA(FOR)
-                ;         .DB "INPUT"
-                ;         DWA(INPUT)
-                ;         .DB "PRINT"
-                ;         DWA(PRINT)
-                ;         .DB "STOP"
-                ;         DWA(STOP)
-                ;         DWA(DEFLT)
+                .db "INPUT"
+                dwa(input)
+                .db "PRINT"
+                dwa(print)
+                .db "STOP"
+                dwa(stop)
+                dwa(deflt)
 tab4:                                       ; functions
-                ; TAB4:                                   ;FUNCTIONS
-                ;         .DB "RND"
-                ;         DWA(RND)
-                ;         .DB "ABS"
-                ;         DWA(ABS)
-                ;         .DB "SIZE"
-                ;         DWA(SIZE)
-                ;         DWA(XP40)
+                .db "RND"
+                dwa(rnd)
+                .db "ABS"
+                dwa(abs)
+                .db "SIZE"
+                dwa(size)
+                dwa(xp40)
 tab5:                                       ; 'TO' in 'FOR'
                 ; TAB5:                                   ;"TO" IN "FOR"
                 ;         .DB "TO"
                 ;         DWA(FR1)
                 ;         DWA(QWHAT)
+                dwa(qwhat)
 tab6:                                       ; 'STEP' in 'FOR'
                 ; TAB6:                                   ;"STEP" IN "FOR"
                 ;         .DB "STEP"
                 ;         DWA(FR2)
                 ;         DWA(FR3)
 tab8:                                       ; relational operators
-                ; TAB8:                                   ;RELATION OPERATORS
-                ;         .DB ">="
-                ;         DWA(XP11)
-                ;         .DB '#'
-                ;         DWA(XP12)
-                ;         .DB '>'
-                ;         DWA(XP13)
-                ;         .DB '='
-                ;         DWA(XP15)
-                ;         .DB "<='"
-                ;         DWA(XP14)
-                ;         .DB '<'
-                ;         DWA(XP16)
-                ;         DWA(XP17)
-                ;
+                .db ">="
+                dwa(xp11)
+                .db "#"
+                dwa(xp12)
+                .db ">"
+                dwa(xp13)
+                .db "="
+                dwa(xp15)
+                .db "<="
+                dwa(xp14)
+                .db "<"
+                dwa(xp16)
                 dwa(xp17)
 
 direct:

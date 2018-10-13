@@ -671,7 +671,6 @@ gl4:
                 call crlf                   ; redo entire line
                 ld a,5eh
                 jr getline
-
 findline:
                 ld a,h                      ; ** FindLine **
                 or a                        ; check the sign of hl
@@ -732,14 +731,14 @@ findskip:
 ;*************************************************************
 printstr:
                 ld b,a
-prtstr1:
+ps1:
                 ld a,(de)                   ; get a character
                 inc de                      ; bump pointer
                 cp b                        ; same as old A?
                 ret z                       ; yes, return
                 call outc                   ; no, show character
                 cp cr                       ; was it a cr?
-                jr nz,prtstr1               ; no, next character
+                jr nz,ps1               ; no, next character
                 ret                         ; yes, returns
 qtstg:
                 call testc                  ; ** Qtstg **
@@ -1353,8 +1352,8 @@ tab2:                                       ; direct/statement
                 dwa(let)
                 .db "IF"
                 dwa(iff)
-                ;         .DB "GOTO"
-                ;         DWA(GOTO)
+                .db "GOTO"
+                dwa(goto)
                 ;         .DB "GOSUB"
                 ;         DWA(GOSUB)
                 ;         .DB "RETURN"

@@ -1240,6 +1240,152 @@ pr8:
                 pop bc
                 jr pr3
 
+;*************************************************************
+;
+; *** FOR *** & NEXT ***
+;
+; 'FOR' HAS TWO FORMS:
+; 'FOR VAR=EXP1 TO EXP2 STEP EXP3' AND 'FOR VAR=EXP1 TO EXP2'
+; THE SECOND FORM MEANS THE SAME THING AS THE FIRST FORM WITH
+; EXP3=1.  (I.E., WITH A STEP OF +1.)
+; TBI WILL FIND THE VARIABLE VAR, AND SET ITS VALUE TO THE
+; CURRENT VALUE OF EXP1.  IT ALSO EVALUATES EXP2 AND EXP3
+; AND SAVE ALL THESE TOGETHER WITH THE TEXT POINTER ETC. IN
+; THE 'FOR' SAVE AREA, WHICH CONSISTS OF 'LOPVAR', 'LOPINC',
+; 'LOPLMT', 'LOPLN', AND 'LOPPT'.  IF THERE IS ALREADY SOME-
+; THING IN THE SAVE AREA (THIS IS INDICATED BY A NON-ZERO
+; 'LOPVAR'), THEN THE OLD SAVE AREA IS SAVED IN THE STACK
+; BEFORE THE NEW ONE OVERWRITES IT.
+; TBI WILL THEN DIG IN THE STACK AND FIND OUT IF THIS SAME
+; VARIABLE WAS USED IN ANOTHER CURRENTLY ACTIVE 'FOR' LOOP.
+; IF THAT IS THE CASE, THEN THE OLD 'FOR' LOOP IS DEACTIVATED.
+; (PURGED FROM THE STACK..)
+;
+; 'NEXT VAR' SERVES AS THE LOGICAL (NOT NECESSARILLY PHYSICAL)
+; END OF THE 'FOR' LOOP.  THE CONTROL VARIABLE VAR. IS CHECKED
+; WITH THE 'LOPVAR'.  IF THEY ARE NOT THE SAME, TBI DIGS IN
+; THE STACK TO FIND THE RIGHT ONE AND PURGES ALL THOSE THAT
+; DID NOT MATCH.  EITHER WAY, TBI THEN ADDS THE 'STEP' TO
+; THAT VARIABLE AND CHECK THE RESULT WITH THE LIMIT.  IF IT
+; IS WITHIN THE LIMIT, CONTROL LOOPS BACK TO THE COMMAND
+; FOLLOWING THE 'FOR'.  IF OUTSIDE THE LIMIT, THE SAVE AREA
+; IS PURGED AND EXECUTION CONTINUES.
+;*************************************************************
+
+for:
+                call pusha                  ; save old save area
+                call setval                 ; set the control variable
+                dec hl                      ; its address is hl
+                ld (loopvar),hl             ; save that
+                ld hl,tab5-1                ; use 'exec' to find 'TO'
+                jp exec
+fr1:
+                call expr                   ; evaluate the limit
+                ld (looplmt),hl             ; and save it
+                ld hl,tab6-1                ; use 'exec' to find 'STEP'
+                jp exec
+fr2:
+                call expr                   ; found 'STEP'
+                jr fr4
+fr3:
+                ld hl,0001h                 ; no 'STEP' so set to 1
+fr4:
+                ld (loopinc),hl             ; and save that too
+fr5:
+                ld hl,(current)             ; save current line number
+                ld (loopln),hl
+                ex de,hl                    ; and text pointer
+                ld (loopptr),hl
+                ld bc,0ah                   ; dig into stack to find loopvar
+                ld hl,(loopvar)
+                ex de,hl
+                ld h,b
+                ld l,b
+                add hl,sp
+                .db 3eh
+fr7:
+                add hl,bc
+                ld a,(hl)
+                inc hl
+                or (hl)
+                jr z,fr8
+                ld a,(hl)
+                dec hl
+                cp d
+                jr nz,fr7
+                ld a,(hl)
+                cp e
+                jr nz,fr7
+                ex de,hl
+                ld hl,0000h
+                add hl,sp
+                ld b,h
+                ld c,l
+                ld hl,000ah
+                add hl,de
+                call mvdown
+                ld sp,hl
+fr8:
+                ld hl,(loopptr)             ; all done
+                ex de,hl
+                call finish
+next:
+                call testvar                ; get address of variable
+                jp c,qwhat                  ; what, no variable
+                ld (varnext),hl             ; yes, save it
+nx0:
+                push de                     ; save the text pointer
+                ex de,hl
+                ld hl,(loopvar)             ; get the variable in 'FOR'
+                ld a,h
+                or l                        ; if 0, there never was one
+                jp z,awhat
+                call comp                   ; else check them
+                jr z,nx3                    ; yes, they agree
+                pop de                      ; no, complete current loop
+                call popa
+                ld hl,(varnext)             ; and pop one level
+                jr nx0                      ; go check again
+nx3:
+                ld e,(hl)
+                inc hl
+                ld d,(hl)                   ; de = value of variable
+                ld hl,(loopinc)
+                push hl
+                ld a,h
+                xor d
+                ld a,d
+                add hl,de
+                jp m,nx4
+                xor h
+                jp m,nx5
+nx4:
+                ex de,hl
+                ld hl,(loopvar)
+                ld (hl),e
+                inc hl
+                ld (hl),d
+                ld hl,(looplmt)
+                pop af
+                or a
+                jp p,nx1                    ; step > 0
+                ex de,hl                    ; step < 0
+nx1:
+                call ckhlde                 ; compare with limit
+                pop de                      ; restore the text pointer
+                jr c,nx2                    ; over the limit
+                ld hl,(loopln)              ; within the limit
+                ld (current),hl
+                ld hl,(loopptr)
+                ex de,hl
+                call finish
+nx5:
+                pop hl
+                pop de
+nx2:
+                call popa                   ; purge this loop
+                call finish                 ;
+
 
 init:
                 ld (ocsw),a                 ; enable output control switch
@@ -1348,9 +1494,8 @@ tab1:                                       ; direct commands
                 .db "NEW"
                 dwa(new)
 tab2:                                       ; direct/statement
-                ; TAB2:                                   ;DIRECT/STATEMENT
-                ;         .DB "NEXT"
-                ;         DWA(NEXT)
+                .db "NEXT"
+                dwa(next)
                 .db "LET"
                 dwa(let)
                 .db "IF"
@@ -1363,8 +1508,8 @@ tab2:                                       ; direct/statement
                 ;         DWA(RETURN)
                 .db "REM"
                 dwa(rem)
-                ;         .DB "FOR"
-                ;         DWA(FOR)
+                .db "FOR"
+                dwa(for)
                 .db "INPUT"
                 dwa(input)
                 .db "PRINT"
@@ -1381,16 +1526,12 @@ tab4:                                       ; functions
                 dwa(size)
                 dwa(xp40)
 tab5:                                       ; 'TO' in 'FOR'
-                ; TAB5:                                   ;"TO" IN "FOR"
-                ;         .DB "TO"
-                ;         DWA(FR1)
-                ;         DWA(QWHAT)
-                dwa(qwhat)
+                .db "TO"
+                dwa(fr1)
 tab6:                                       ; 'STEP' in 'FOR'
-                ; TAB6:                                   ;"STEP" IN "FOR"
-                ;         .DB "STEP"
-                ;         DWA(FR2)
-                ;         DWA(FR3)
+                .db "STEP"
+                dwa(fr2)
+                dwa(fr3)
 tab8:                                       ; relational operators
                 .db ">="
                 dwa(xp11)

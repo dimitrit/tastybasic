@@ -23,7 +23,7 @@ Tasty Basic provides the following functions to read from and write to memory lo
 
   `OUT m,n` Sends the value n to I/O port _m_
 
-  `USR(i)`  Accepts a numeric or string expression _i_ , calls a user-defined machine language routine, and returns the resulting value.
+  `USR(i)`  Accepts a numeric expression _i_ , calls a user-defined machine language routine, and returns the resulting value.
 
 #### Example
 The following example shows _TODO_
@@ -67,6 +67,11 @@ Before running, ensure that the `TTY0` device is configured as following in the 
 | TxEmpty      | 0   | 1     |        
 | RxFull IntE  | N/A |        
 | TxEmpty IntE | N/A |         
+
+## License
+In line with Wang's (1976) original Tiny Basic source listing and later derived works
+by Rauskolb (1976) and Gabbard (2017), Tasty Basic is licensed under GPL v3.
+For license details refer to the enclosed [LICENSE](../LICENSE) file.
 
 ## References
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  

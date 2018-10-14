@@ -1,4 +1,26 @@
 
+; -----------------------------------------------------------------------------
+; Copyright 2018 Dimitri Theulings
+;
+; This file is part of Tasty Basic.
+;
+; Tasty Basic is free software: you can redistribute it and/or modify
+; it under the terms of the GNU General Public License as published by
+; the Free Software Foundation, either version 3 of the License, or
+; (at your option) any later version.
+;
+; Tasty Basic is distributed in the hope that it will be useful,
+; but WITHOUT ANY WARRANTY; without even the implied warranty of
+; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; GNU General Public License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with Tasty Basic.  If not, see <https://www.gnu.org/licenses/>.
+; -----------------------------------------------------------------------------
+; Tasty Basic is derived from earlier works by Li-Chen Wang, Peter Rauskolb,
+; and Doug Gabbard. Refer to the enclosed README.md file for details.
+; -----------------------------------------------------------------------------
+
 #ifdef zemu
 tty_data        .equ 7ch                    ; Z80 Emulator
 tty_status      .equ 7dh

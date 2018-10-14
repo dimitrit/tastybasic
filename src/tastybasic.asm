@@ -1038,7 +1038,6 @@ st2:
 st3:
                 ld a,'>'                    ; initialise prompt
                 call getline
-                ; jp st3 ;                    ; *** TODO REMOVE LINE ***
                 push de                     ; de points to end of line
                 ld de,buffer                ; point de to beginning of line
                 call testnum                ; check if it is a number
@@ -1134,8 +1133,8 @@ new:
                 call endchk                 ; ** New **
                 ld hl,textbegin
                 ld (textunfilled),hl
-stop:
-                call endchk                 ; ** Stop **
+endd:
+                call endchk                 ; ** End **
                 jp rstart
 run:
                 call endchk                 ; ** Run **
@@ -1240,6 +1239,55 @@ pr8:
                 call printnum
                 pop bc
                 jr pr3
+
+;*************************************************************
+;
+; *** GOSUB *** & RETURN ***
+;
+; 'GOSUB EXPR;' OR 'GOSUB EXPR (CR)' IS LIKE THE 'GOTO'
+; COMMAND, EXCEPT THAT THE CURRENT TEXT POINTER, STACK POINTER
+; ETC. ARE SAVE SO THAT EXECUTION CAN BE CONTINUED AFTER THE
+; SUBROUTINE 'RETURN'.  IN ORDER THAT 'GOSUB' CAN BE NESTED
+; (AND EVEN RECURSIVE), THE SAVE AREA MUST BE STACKED.
+; THE STACK POINTER IS SAVED IN 'STKGOS', THE OLD 'STKGOS' IS
+; SAVED IN THE STACK.  IF WE ARE IN THE MAIN ROUTINE, 'STKGOS'
+; IS ZERO (THIS WAS DONE BY THE "MAIN" SECTION OF THE CODE),
+; BUT WE STILL SAVE IT AS A FLAG FOR NO FURTHER 'RETURN'S.
+;
+; 'RETURN(CR)' UNDOS EVERYTHING THAT 'GOSUB' DID, AND THUS
+; RETURN THE EXECUTION TO THE COMMAND AFTER THE MOST RECENT
+; 'GOSUB'.  IF 'STKGOS' IS ZERO, IT INDICATES THAT WE
+; NEVER HAD A 'GOSUB' AND IS THUS AN ERROR.
+;*************************************************************
+gosub:
+                call pusha                  ; ** Gosub **
+                call expr                   ; save the current "FOR" params
+                push de                     ; and text pointer
+                call findline               ; find the target line
+                jp nz,ahow                  ; how? because it doesn't exist
+                ld hl,(current)             ; found it, save old 'current'
+                push hl
+                ld hl,(stkgos)              ; and 'stkgos'
+                push hl
+                ld hl,0000h                 ; and load new ones
+                ld (loopvar),hl
+                add hl,sp
+                ld (stkgos),hl
+                jp runtsl                   ; and run the line
+return:
+                call endchk                 ; there must be a cr
+                ld hl,(stkgos)              ; check old stack pointer
+                ld a,h                      ;
+                or l
+                jp z,what                   ; what? not found
+                ld sp,hl                    ; otherwise restore it
+                pop hl
+                ld (stkgos),hl
+                pop hl
+                ld (current),hl             ; and old 'current'
+                pop de                      ; and old text pointer
+                call popa                   ; and old 'FOR' params
+                call finish                 ; and we're back
 
 ;*************************************************************
 ;
@@ -1503,10 +1551,10 @@ tab2:                                       ; direct/statement
                 dwa(iff)
                 .db "GOTO"
                 dwa(goto)
-                ;         .DB "GOSUB"
-                ;         DWA(GOSUB)
-                ;         .DB "RETURN"
-                ;         DWA(RETURN)
+                .db "GOSUB"
+                dwa(gosub)
+                .db "RETURN"
+                dwa(return)
                 .db "REM"
                 dwa(rem)
                 .db "FOR"
@@ -1515,8 +1563,8 @@ tab2:                                       ; direct/statement
                 dwa(input)
                 .db "PRINT"
                 dwa(print)
-                .db "STOP"
-                dwa(stop)
+                .db "END"
+                dwa(endd)
                 dwa(deflt)
 tab4:                                       ; functions
                 .db "RND"

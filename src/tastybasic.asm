@@ -106,9 +106,10 @@ finish:
 ;*************************************************************
 rem:
                 ld hl,0000h                 ; ** Rem **
-                .db 3eh                     ; this is like 'IF 0'
+                jr if1                      ; this is like 'IF 0'
 iff:
                 call expr                   ; ** If **
+if1:
                 ld a,h                      ; is the expr = 0?
                 or l
                 jp nz,runsml                ; no, continue

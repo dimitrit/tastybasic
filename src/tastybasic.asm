@@ -214,6 +214,23 @@ lt1:
 
 ;*************************************************************
 ;
+; *** PEEK *** POKE *** IN *** & OUT ***
+;
+; 'PEEK(<EXPR>)' RETURNS THE VALUE OF THE BYTE AT THE GIVEN
+; ADDRESS.
+;
+;*************************************************************
+peek:
+                call parn                   ; ** Peek(expr) **
+                ld a,h                      ; expression must be positive
+                or a
+                jp m,qhow
+                ld a,(hl)
+                ld h,0
+                ld l,a
+                ret
+;*************************************************************
+;
 ; *** EXPR ***
 ;
 ; 'EXPR' EVALUATES ARITHMETICAL OR LOGICAL EXPRESSIONS.
@@ -1136,7 +1153,7 @@ st4:
 ;
 ; 'NEW(CR)' SETS 'TXTUNF' TO POINT TO 'TXTBGN'
 ;
-; 'STOP(CR)' GOES BACK TO 'RSTART'
+; 'END(CR)' GOES BACK TO 'RSTART'
 ;
 ; 'RUN(CR)' FINDS THE FIRST STORED LINE, STORE ITS ADDRESS (IN
 ; 'CURRENT'), AND START EXECUTE IT.  NOTE THAT ONLY THOSE
@@ -1589,6 +1606,8 @@ tab2:                                       ; direct/statement
                 dwa(endd)
                 dwa(deflt)
 tab4:                                       ; functions
+                .db "PEEK"
+                dwa(peek)
                 .db "RND"
                 dwa(rnd)
                 .db "ABS"

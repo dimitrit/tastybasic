@@ -71,7 +71,7 @@ Before running, ensure that the `TTY0` device is configured as following in the 
 ## License
 In line with Wang's (1976) original Tiny Basic source listing and later derived works
 by Rauskolb (1976) and Gabbard (2017), Tasty Basic is licensed under GPL v3.
-For license details refer to the enclosed [LICENSE](../LICENSE) file.
+For license details refer to the enclosed [LICENSE](../master/LICENSE) file.
 
 ## References
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  

@@ -1279,10 +1279,13 @@ io1:
                 pop bc                      ; restore bc
                 ret                         ; return with z set
 io2:
+                cp 60h                      ; is it lower case?
+                jp c,io3                    ; no
+                and 0dfh                    ; yes, make upper case
+io3:
                 cp ctrlc                    ; is it ctrl-c?
                 ret nz                      ; no
                 jp rstart                   ; yes, restart tasty basic
-
 crlf:
                 ld a,cr
 outc:

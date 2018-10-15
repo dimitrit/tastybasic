@@ -218,6 +218,8 @@ lt1:
 ;
 ; 'PEEK(<EXPR>)' RETURNS THE VALUE OF THE BYTE AT THE GIVEN
 ; ADDRESS.
+; 'POKE <expr1>,<expr1>' SETS BYTE AT ADDRESS <expr1> TO
+; VALUE <expr2>
 ;
 ;*************************************************************
 peek:
@@ -229,6 +231,30 @@ peek:
                 ld h,0
                 ld l,a
                 ret
+poke:
+                call expr                   ; ** Poke **
+                ld a,h                      ; address must be positive
+                or a
+                jp m,qhow
+                push hl
+                call testc                  ; is next char a comma?
+                .db ','
+                .db pk1-$-1                 ; what, no?
+                call expr                   ; get value to store
+                ld a,0                      ; is it > 255?
+                cp h
+                jp z,pk2                    ; no, all good
+                pop hl
+                jp m,qhow
+pk2:
+                ld a,l                      ; save value
+                pop hl
+                ld (hl),a
+                call finish
+pk1:
+                pop hl
+                jp qwhat
+
 ;*************************************************************
 ;
 ; *** EXPR ***
@@ -1602,6 +1628,8 @@ tab2:                                       ; direct/statement
                 dwa(input)
                 .db "PRINT"
                 dwa(print)
+                .db "POKE"
+                dwa(poke)
                 .db "END"
                 dwa(endd)
                 dwa(deflt)

@@ -41,12 +41,12 @@ ctrlo           .equ 0fh
 ctrlu           .equ 15h
 
 #define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
+
                 .org 0h
 start:
                 ld sp,stack                 ; ** Cold Start **
                 ld a,0ffh
                 jp init
-
 testc:
                 ex (sp),hl                  ; ** TestC **
                 call skipspace              ; ignore spaces
@@ -254,7 +254,18 @@ pk2:
 pk1:
                 pop hl
                 jp qwhat
-
+usrexec:
+                call parn                   ; ** Usr(expr) **
+                push de
+                ex de,hl
+                ld hl,ue1
+                push hl
+                ld ix,(usrvector)
+                jp (ix)
+ue1:
+                ex de,hl
+                pop de
+                ret
 ;*************************************************************
 ;
 ; *** EXPR ***
@@ -1640,6 +1651,8 @@ tab4:                                       ; functions
                 dwa(rnd)
                 .db "ABS"
                 dwa(abs)
+                .db "USR"
+                dwa(usrexec)
                 .db "SIZE"
                 dwa(size)
                 dwa(xp40)
@@ -1707,8 +1720,14 @@ ex5:
 ;-------------------------------------------------------------------------------
 
 lstrom:                                     ; all above can be rom
-               .org 01000h                  ; following must be in ram
+               .org 09feh
+usrvector:     .db usrfunc & 0ffh          ; location of user defined
+               .db (usrfunc >> 8) & 0ffh   ; function
 
+               .org 0a00h                   ; following must be in ram
+usrfunc        jp qhow                      ; default user defined function
+
+               .org 01000h                  ; start of state
 ocsw           .ds 1                        ; output control switch
 current        .ds 2                        ; points to current line
 stkgos         .ds 2                        ; saves sp in 'GOSUB'

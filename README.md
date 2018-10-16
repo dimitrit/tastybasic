@@ -25,18 +25,46 @@ Tasty Basic provides the following functions to read from and write to memory lo
 
   `USR(i)`  Accepts a numeric expression _i_ , calls a user-defined machine language routine, and returns the resulting value.
 
+### User defined machine language routines
+The `USR(i)` function enables interaction with user defined machine routines.
+The entry point for these routines is defined by the vector defined in ... _TODO!_
+
 #### Example
-The following example shows _TODO_
+The following example shows the bit summation for a given value.
 
 ```
-10 DATA 1,2,3,4,5
-20 FOR I=1 TO 5
-30 READ A
-40 POKE 100+I,A
-50 NEXT I
-60 INPUT P
-70 Q=USR(P)
-80 PRINT "The something of", P, "is", Q
+10 DATA 6,0,122,205,14,10,123,205,14,10,88,22,0,201
+20 DATA 254,0,200,203,71,40,1,4,203,63,24,244
+30 FOR I=0 TO 25
+40 READ A
+50 POKE 2560+I,A
+60 NEXT I
+70 INPUT P
+80 Q=USR(P)
+90 PRINT "THE BIT SUMMATION OF ", P, " IS ", Q
+100 GOTO 70
+```
+
+```
+0001   0A00             .ORG 2560
+0002   0A00 06 00         LD B,0
+0003   0A02 7A            LD A,D
+0004   0A03 CD 0E 0A      CALL COUNT
+0005   0A06 7B            LD A,E
+0006   0A07 CD 0E 0A      CALL COUNT
+0007   0A0A 58            LD E,B
+0008   0A0B 16 00         LD D,0
+0009   0A0D C9            RET
+0010   0A0E             COUNT:
+0011   0A0E FE 00         CP 0
+0012   0A10 C8            RET Z
+0013   0A11 CB 47         BIT 0,A
+0014   0A13 28 01         JR Z,NEXT
+0015   0A15 04            INC B
+0016   0A16             NEXT:
+0017   0A16 CB 3F         SRL A
+0018   0A18 18 F4         JR COUNT
+0019   0A1A             .END
 ```
 
 ## Building the ROM image

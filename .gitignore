@@ -3,3 +3,4 @@ bin
 *.com
 *.bin
 .idea
+.DS_Store

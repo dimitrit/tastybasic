@@ -9,41 +9,39 @@ The Tasty Basic language is based on Palo Alto Tiny Basic, as described in the D
 issue of Interface Age ([Rauskolb, 1976](##References)). As such, Tasty Basic shares many of the
 same limitations as Palo Alto Basic. All numbers are integers and must be less than or
 equal to 32767, and support for only 26 variables denoted by letters A through Z. In addition
-to Tiny Basic's `ABS(n)`, `RND(n)` and `SIZE` functions, however, Tasty Basic provides functions
+to Tiny Basic's `ABS(n)`, `RND(n)` and `SIZE` functions, however, Tasty Basic provides statements and functions
 to read and write memory locations, and allows interaction with I/O ports.
+
+### Statements
+Tasty Basic provides two statements to write to memory and I/O ports:
+
+`POKE m,n` Writes the value _n_ to address location _m_
+
+`OUT m,n` Sends the value n to I/O port _m_
+
+Additionally there are statements to define and read constant values:
+
+`DATA m[,n[,...]]` Used to store constant values in the program code. Each DATA statement can define one or more constants separated by commas. Note that `DATA` statements *must* appear before any `READ` statements.
+
+`READ m` Reads the next available data value and assigns it to variable _m_, starting with the left most value in the first `DATA` statement.
 
 ### Functions
 Tasty Basic provides the following functions to read from and write to memory locations and I/O ports:
 
-  `PEEK(m)` Returns the byte value of address location _m_
+`IN(m)` Returns the byte value read from I/O port _m_
 
-  `POKE m,n` Writes the value _n_ to address location _m_
+`PEEK(m)` Returns the byte value of address location _m_
 
-  `INP(m)` Returns the byte read from I/O port _m_
-
-  `OUT m,n` Sends the value n to I/O port _m_
-
-  `USR(i)`  Accepts a numeric expression _i_ , calls a user-defined machine language routine, and returns the resulting value.
+`USR(i)`  Accepts a numeric expression _i_ , calls a user-defined machine language routine, and returns the resulting value.
 
 ### User defined machine language routines
 The `USR(i)` function enables interaction with user defined machine routines.
-The entry point for these routines is defined by the vector defined in ... _TODO!_
+The entry point for these routines is specified using a vector at $09FE/$09FF,
+which by default points to $0A00. The value _i_ is passed to the routine
+in the `DE` register, which must also contain the result on return.
 
 #### Example
-The following example shows the bit summation for a given value.
-
-```
-10 DATA 6,0,122,205,14,10,123,205,14,10,88,22,0,201
-20 DATA 254,0,200,203,71,40,1,4,203,63,24,244
-30 FOR I=0 TO 25
-40 READ A
-50 POKE 2560+I,A
-60 NEXT I
-70 INPUT P
-80 Q=USR(P)
-90 PRINT "THE BIT SUMMATION OF ", P, " IS ", Q
-100 GOTO 70
-```
+The following example shows the bit summation for a given value:
 
 ```
 0001   0A00             .ORG 2560
@@ -66,6 +64,20 @@ The following example shows the bit summation for a given value.
 0018   0A18 18 F4         JR COUNT
 0019   0A1A             .END
 ```
+
+```
+10 DATA 6,0,122,205,14,10,123,205,14,10,88,22,0,201
+20 DATA 254,0,200,203,71,40,1,4,203,63,24,244
+30 FOR I=0 TO 25
+40 READ A
+50 POKE 2560+I,A
+60 NEXT I
+70 INPUT P
+80 Q=USR(P)
+90 PRINT "THE BIT SUMMATION OF ", P, " IS ", Q
+100 GOTO 70
+```
+
 
 ## Building the ROM image
 

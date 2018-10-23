@@ -74,7 +74,7 @@ The following example shows the bit summation for a given value:
 60 NEXT I
 70 INPUT P
 80 Q=USR(P)
-90 PRINT "THE BIT SUMMATION OF ", P, " IS ", Q
+90 PRINT "THE BIT SUMMATION OF "#5,P," IS "#2,Q
 100 GOTO 70
 ```
 

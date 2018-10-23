@@ -148,10 +148,10 @@ inputerror:
 input:
                 push de                     ; ** Input **
                 call qtstg                  ; is next item a string?
-                jr ip2                      ; no
+                jp ip2                      ; no
                 call testvar                ; yes and followed by a variable?
-                jr c,ip4                    ; no
-                jr ip3                      ; yes, input variable
+                jp c,ip4                    ; no
+                jp ip3                      ; yes, input variable
 ip2:
                 push de                     ; save for printstr
                 call testvar                ; must be variable

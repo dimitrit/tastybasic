@@ -741,7 +741,7 @@ gl3:
                 cp buffer & 0ffh            ; if there are any?
                 jr z,gl4                    ; no, redo whole line
                 dec de                      ; yes, back pointer
-                ld a,5ch                    ; and echo a backslash
+                ld a,08h                    ; and echo a backspace
                 call outc
                 jr gl1                      ; and get next character
 gl4:
@@ -1727,7 +1727,7 @@ usrvector:     .db usrfunc & 0ffh          ; location of user defined
                .org 0a00h                   ; following must be in ram
 usrfunc        jp qhow                      ; default user defined function
 
-               .org 01000h                  ; start of state
+               .org 0c00h                   ; start of state
 ocsw           .ds 1                        ; output control switch
 current        .ds 2                        ; points to current line
 stkgos         .ds 2                        ; saves sp in 'GOSUB'
@@ -1741,11 +1741,11 @@ loopptr        .ds 2                        ; loop text pointer
 rndptr         .ds 2                        ; random number pointer
 textunfilled   .ds 2                        ; -> unfilled text area
 textbegin      .ds 2                        ; start of text save area
-               .org 07fffh
+               .org 01dffh
 textend        .ds 0                        ; end of text area
 varbegin       .ds 55                       ; variable @(0)
 buffer         .ds 72                       ; input buffer
 bufend         .ds 1
 stacklimit     .ds 1
-stack          .equ 0fe00h
+stack          .equ 01fffh
                .end

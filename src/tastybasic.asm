@@ -746,7 +746,7 @@ gl3:
                 jr gl1                      ; and get next character
 gl4:
                 call crlf                   ; redo entire line
-                ld a,5eh
+                ld a,'>'
                 jr getline
 findline:
                 ld a,h                      ; ** FindLine **
@@ -1686,7 +1686,7 @@ exec:
 ex1:
                 ld a,(de)
                 inc de
-                cp 23h
+                cp '.'
                 jr z,ex3
                 inc hl
                 cp (hl)

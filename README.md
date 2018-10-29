@@ -108,12 +108,21 @@ Before running, ensure that the `TTY0` device is configured as following in the 
 | RxFull IntE  | N/A |        
 | TxEmpty IntE | N/A |         
 
+
+## Example BASIC programs
+
+A small number of example BASIC programs are included in the `src` directory. Most of
+these examples programs are from _BASIC COMPUTER GAMES_ ([Ahl, 1978](##References)),
+and have been modified as required to make them work with Tasty Basic.
+
+
 ## License
 In line with Wang's (1976) original Tiny Basic source listing and later derived works
 by Rauskolb (1976) and Gabbard (2017), Tasty Basic is licensed under GPL v3.
 For license details refer to the enclosed [LICENSE](../master/LICENSE) file.
 
 ## References
+Ahl, D. H. (Ed.).(1978). _BASIC COMPUTER GAMES_. New York, NY: Workman Publishing  
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  
 Gabbard, D. (2017, October 10). _TinyBASIC for the z80 – TinyBASIC 2.0g._ Retrieved September 29, 2108, from [http://retrodepot.net/?p=274](http://retrodepot.net/?p=274)  
 Moore, W. J. (2015). _Z80 Emulator_ [Computer software]. Retrieved October 6, 2018, from [https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar](https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar)  

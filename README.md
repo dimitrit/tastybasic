@@ -112,8 +112,8 @@ Before running, ensure that the `TTY0` device is configured as following in the 
 ## Example BASIC programs
 
 A small number of example BASIC programs are included in the `examples` directory. Most of
-these examples programs are from _BASIC COMPUTER GAMES_ ([Ahl, 1978](##References)),
-and have been modified as required to make them work with Tasty Basic.
+these programs are from _BASIC COMPUTER GAMES_ ([Ahl, 1978](##References)), and have been 
+modified as required to make them work with Tasty Basic.
 
 
 ## License

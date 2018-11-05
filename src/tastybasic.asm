@@ -1061,6 +1061,7 @@ ahow:
 				jp handleerror
 
 msg1			.db "TASTY BASIC",cr
+msg2			.db " BYTES FREE",cr
 how				.db "HOW?",cr
 ok				.db "OK",cr
 what			.db "WHAT?",cr
@@ -1511,8 +1512,11 @@ nx2:
 				call popa				; purge this loop
 				call finish				;
 
-
 init:
+				ld hl,start				; initialise random pointer
+				ld (rndptr),hl
+				ld hl,textbegin			; initialise text area pointers
+				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
 				ld d,19h				; clear the screen
 patloop:
@@ -1521,10 +1525,11 @@ patloop:
 				jr nz,patloop
 				ld de,msg1				; then output welcome message
 				call printstr
-				ld hl,start				; initialise random pointer
-				ld (rndptr),hl
-				ld hl,textbegin			; initialise text area pointers
-				ld (textunfilled),hl
+				call crlf
+				call size				; output free size message
+				call printnum
+				ld de,msg2
+				call printstr
 				jp rstart
 
 chkio:
@@ -1725,7 +1730,7 @@ usrptr:			.db usrfunc & 0ffh		; points to user defined function
 				.db (usrfunc >> 8) & 0ffh
 
 				.org 0a00h				; following must be in ram
-usrfunc		jp qhow						; default user defined function
+usrfunc			jp qhow					; default user defined function
 
 				.org 0c00h				; start of state
 ocsw			.ds 1					; output control switch

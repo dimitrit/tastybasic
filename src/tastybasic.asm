@@ -21,17 +21,7 @@
 ; and Doug Gabbard. Refer to the enclosed README.md file for details.
 ; -----------------------------------------------------------------------------
 
-#ifdef zemu
-tty_data		.equ 7ch				; Z80 Emulator
-tty_status		.equ 7dh
-rx_full			.equ 1
-tx_empty		.equ 0
-#else
-; tty_data		.equ 67h				; SBC V2
-; tty_status	.equ 68h
-; rx_full		.equ 1
-; tx_empty		.equ 0
-#endif
+#define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
 
 ctrlc			.equ 03h
 bs				.equ 08h
@@ -40,9 +30,19 @@ cr				.equ 0dh
 ctrlo			.equ 0fh
 ctrlu			.equ 15h
 
-#define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
+#ifdef ZEMU							 ; Z80 Emulator
+tty_data		.equ 7ch
+tty_status		.equ 7dh
+rx_full			.equ 1
+tx_empty		.equ 0
 
 				.org 0h
+#else								   ; RomWBW
+#include		"std.asm"
+
+				.org TBC_LOC
+#endif
+
 start:
 				ld sp,stack				; ** Cold Start **
 				ld a,0ffh
@@ -480,7 +480,7 @@ rnd:
 				push de					; save de and hl
 				push hl
 				ld hl,(rndptr)			; get memory as random number
-				ld de,lstrom
+				ld de,LST_ROM
 				call comp
 				jr c,ra1				; wrap around if last
 				ld hl,start
@@ -1213,6 +1213,12 @@ new:
 endd:
 				call endchk				; ** End **
 				jp rstart
+bye:
+				call endchk				; ** Reboot **
+				LD A,BID_BOOT			; BOOT BANK
+				LD HL,0			 		; ADDRESS ZERO
+				CALL HB_BNKCALL			; DOES NOT RETURN
+				HALT
 run:
 				call endchk				; ** Run **
 				ld de,textbegin
@@ -1533,10 +1539,9 @@ patloop:
 				jp rstart
 
 chkio:
-				in a,(tty_status)		; check if character available
-				bit rx_full,a
+				call haschar			; check if character available
 				ret z					; no, return
-				in a,(tty_data)			; get the character
+				call getchar			; get the character
 				push bc					; is it a lf?
 				ld b,a
 				sub lf
@@ -1568,19 +1573,23 @@ outc:
 				push af
 				ld a,(ocsw)				; check output control switch
 				or a
-				jr nz,uart_tx			; output is enabled
+				jr nz,oc1   			; output is enabled
 				pop af					; output is disabled
 				ret						; so return
-uart_tx:
-				call uart_tx_ready		; see if transmit is available
-				pop af					; restore the character
-				out (tty_data),a		; and send it
+oc1:
+				pop af
+				call putchar
 				cp cr					; was it a cr?
 				ret nz					; no, return
 				ld a,lf					; send a lf
 				call outc
 				ld a,cr					; restore register
 				ret						; and return
+putchar:
+#ifdef ZEMU
+				call uart_tx_ready		; see if transmit is available
+				out (tty_data),a		; and send it
+				ret
 uart_tx_ready:
 				push af
 uart_tx_ready_loop:
@@ -1588,6 +1597,57 @@ uart_tx_ready_loop:
 				bit tx_empty,a
 				jp z,uart_tx_ready_loop
 				pop af
+#else
+				PUSH	AF
+				PUSH	BC
+				PUSH	DE
+				PUSH	HL
+											; OUTPUT CHARACTER TO CONSOLE VIA HBIOS
+				LD		E,A					; OUTPUT CHAR TO E
+				LD		C,CIODEV_CONSOLE	; CONSOLE UNIT TO C
+				LD		B,BF_CIOOUT			; HBIOS FUNC: OUTPUT CHAR
+				RST		08					; HBIOS OUTPUTS CHARACTER
+				POP		HL
+				POP		DE
+				POP		BC
+				POP	 AF
+#endif
+				ret
+haschar:
+#ifdef ZEMU
+				in a,(tty_status)		; check if character available
+				bit rx_full,a
+#else
+				PUSH	BC
+				PUSH	DE
+				PUSH	HL
+										; GET CONSOLE INPUT STATUS VIA HBIOS
+				LD		C,CIODEV_CONSOLE; CONSOLE UNIT TO C
+				LD		B,BF_CIOIST		; HBIOS FUNC: INPUT STATUS
+				RST		08				; HBIOS RETURNS STATUS IN A
+				POP		HL
+				POP		DE
+				POP		BC
+#endif
+				ret
+
+getchar:
+#ifdef ZEMU
+				in a,(tty_data)			; get the character
+#else
+				PUSH	BC
+				PUSH	DE
+				PUSH	HL
+											; INPUT CHARACTER FROM CONSOLE VIA HBIOS
+				LD		C,CIODEV_CONSOLE	; CONSOLE UNIT TO C
+				LD		B,BF_CIOIN			; HBIOS FUNC: INPUT CHAR
+				RST		08					; HBIOS READS CHARACTDR
+				LD		A,E					; MOVE CHARACTER TO A FOR RETURN
+											; RESTORE REGISTERS (AF IS OUTPUT)
+				POP		HL
+				POP		DE
+				POP		BC
+#endif
 				ret
 
 ;*************************************************************
@@ -1648,6 +1708,8 @@ tab2:			; direct/statement
 				dwa(poke)
 				.db "END"
 				dwa(endd)
+				.db	"BYE"
+				dwa(bye)
 				dwa(deflt)
 tab4:			; functions
 				.db "PEEK"
@@ -1723,10 +1785,10 @@ ex5:
 				jp (hl)
 
 ;-------------------------------------------------------------------------------
+LST_ROM:		; all above can be rom
 
-lstrom:			; all above can be rom
 				.org 09feh
-usrptr:			.db usrfunc & 0ffh		; points to user defined function
+usrptr:			.db usrfunc & 0ffh		; points to user defined function area
 				.db (usrfunc >> 8) & 0ffh
 
 				.org 0a00h				; following must be in ram
@@ -1752,5 +1814,15 @@ varbegin		.ds 55					; variable @(0)
 buffer			.ds 72					; input buffer
 bufend			.ds 1
 stacklimit		.ds 1
-stack			.equ 01fffh
+				.org 01fffh
+stack			$
+
+#ifndef ZEMU
+SLACK			.EQU	(TBC_END - LST_ROM)
+				.FILL	SLACK,'t'
+
+				.ECHO	"TASTYBASIC space remaining: "
+				.ECHO	SLACK
+				.ECHO	" bytes.\n"
+#endif
 				.end

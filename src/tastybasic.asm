@@ -1213,12 +1213,14 @@ new:
 endd:
 				call endchk				; ** End **
 				jp rstart
+#ifndef ZEMU
 bye:
 				call endchk				; ** Reboot **
 				LD A,BID_BOOT			; BOOT BANK
 				LD HL,0			 		; ADDRESS ZERO
 				CALL HB_BNKCALL			; DOES NOT RETURN
 				HALT
+#endif
 run:
 				call endchk				; ** Run **
 				ld de,textbegin
@@ -1708,8 +1710,10 @@ tab2:			; direct/statement
 				dwa(poke)
 				.db "END"
 				dwa(endd)
+#ifndef ZEMU
 				.db	"BYE"
 				dwa(bye)
+#endif
 				dwa(deflt)
 tab4:			; functions
 				.db "PEEK"
@@ -1808,14 +1812,14 @@ loopptr			.ds 2					; loop text pointer
 rndptr			.ds 2					; random number pointer
 textunfilled	.ds 2					; -> unfilled text area
 textbegin		.ds 2					; start of text save area
-				.org 01dffh
+				.org 07dffh
 textend			.ds 0					; end of text area
 varbegin		.ds 55					; variable @(0)
 buffer			.ds 72					; input buffer
 bufend			.ds 1
 stacklimit		.ds 1
-				.org 01fffh
-stack			$
+				.org 07fffh
+stack			.equ $
 
 #ifndef ZEMU
 SLACK			.EQU	(TBC_END - LST_ROM)

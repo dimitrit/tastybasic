@@ -18,7 +18,8 @@
 ; along with Tasty Basic.  If not, see <https://www.gnu.org/licenses/>.
 ; -----------------------------------------------------------------------------
 ; Tasty Basic is derived from earlier works by Li-Chen Wang, Peter Rauskolb,
-; and Doug Gabbard. Refer to the enclosed README.md file for details.
+; and Doug Gabbard. Refer to the source code repository for details
+; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
 #define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
@@ -30,19 +31,16 @@ cr				.equ 0dh
 ctrlo			.equ 0fh
 ctrlu			.equ 15h
 
-#ifdef ZEMU							 ; Z80 Emulator
+#ifdef ZEMU								; Z80 Emulator
 tty_data		.equ 7ch
 tty_status		.equ 7dh
 rx_full			.equ 1
 tx_empty		.equ 0
-
-				.org 0h
-#else								   ; RomWBW
+TBC_LOC			.equ 0
+#else									; RomWBW
 #include		"std.asm"
-
-				.org TBC_LOC
 #endif
-
+				.org TBC_LOC
 start:
 				ld sp,stack				; ** Cold Start **
 				ld a,0ffh
@@ -1789,16 +1787,14 @@ ex5:
 				jp (hl)
 
 ;-------------------------------------------------------------------------------
-LST_ROM:		; all above can be rom
-
-				.org 09feh
+LST_ROM:		; all the above _can_ be in rom
+				; all following *must* be in ram
+				.org (TBC_LOC + 09feh)
 usrptr:			.db usrfunc & 0ffh		; points to user defined function area
 				.db (usrfunc >> 8) & 0ffh
-
-				.org 0a00h				; following must be in ram
+				.org (TBC_LOC + 0a00h)
 usrfunc			jp qhow					; default user defined function
-
-				.org 0c00h				; start of state
+				.org (TBC_LOC + 0c00h)	; start of state
 ocsw			.ds 1					; output control switch
 current			.ds 2					; points to current line
 stkgos			.ds 2					; saves sp in 'GOSUB'
@@ -1812,13 +1808,13 @@ loopptr			.ds 2					; loop text pointer
 rndptr			.ds 2					; random number pointer
 textunfilled	.ds 2					; -> unfilled text area
 textbegin		.ds 2					; start of text save area
-				.org 07dffh
+				.org (TBC_LOC + 07dffh)
 textend			.ds 0					; end of text area
 varbegin		.ds 55					; variable @(0)
 buffer			.ds 72					; input buffer
 bufend			.ds 1
 stacklimit		.ds 1
-				.org 07fffh
+				.org (TBC_LOC + 07fffh)
 stack			.equ $
 
 #ifndef ZEMU

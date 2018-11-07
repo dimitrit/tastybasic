@@ -631,13 +631,13 @@ setval:
 sv1:
 				jp qwhat
 fin:
-				call testc				; test for ';'
-				.db ';'
+				call testc				; test for ':'
+				.db ':'
 				.db fi1 - $ - 1
 				pop af					; yes, purge return address
 				jp runsml				; continue on same line
 fi1:
-				call testc				; not ';', is it cr
+				call testc				; not ':', is it cr
 				.db cr
 				.db fi2 - $ - 1
 				pop af					; yes, purge return address
@@ -1287,7 +1287,7 @@ ls1:
 print:
 				ld c,6					; c = number of spaces
 				call testc				; is it a semicolon?
-				.db ';'
+				.db ':'
 				.db pr2-$-1
 				call crlf
 				jr runsml

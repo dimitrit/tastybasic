@@ -559,8 +559,13 @@ checksign:
 				ret p
 changesign:
 				ld a,h					; ** ChangeSign **
+				or l					; check if hl is zero
+				jp nz,cs1				; no, try to change sign
+				ret						; yes, return
+cs1:
+				ld a,h					; change sign of hl	
 				push af
-				cpl						; change sign of hl
+				cpl
 				ld h,a
 				ld a,l
 				cpl

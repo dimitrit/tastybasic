@@ -563,7 +563,7 @@ changesign:
 				jp nz,cs1				; no, try to change sign
 				ret						; yes, return
 cs1:
-				ld a,h					; change sign of hl	
+				ld a,h					; change sign of hl
 				push af
 				cpl
 				ld h,a
@@ -595,7 +595,7 @@ ck1:
 ; THEN AN EXPR.  IT EVALUATES THE EXPR. AND SET THE VARIABLE
 ; TO THAT VALUE.
 ;
-; "FIN" CHECKS THE END OF A COMMAND.  IF IT ENDED WITH ";",
+; "FIN" CHECKS THE END OF A COMMAND.  IF IT ENDED WITH ":",
 ; EXECUTION CONTINUES.  IF IT ENDED WITH A CR, IT FINDS THE
 ; NEXT LINE AND CONTINUE FROM THERE.
 ;
@@ -899,7 +899,27 @@ pn6:
 				add a,30h				; else convert to ascii
 				call outc				; and print the digit
 				jr pn6					; next digit
-
+printhex:
+				ld  c,h					; ** PrintHex **
+				call ph1				; first hex byte
+printhex8:
+				ld  c,l					; then second
+ph1:
+				ld  a,c					; get left nibble into position
+				rra
+				rra
+				rra
+				rra
+				call ph2				; and turn into hex digit
+				ld  a,c					; then convert right nibble
+ph2:
+				and 0fh					; mask right nibble
+				add a,90h				; and convert to ascii character
+				daa
+				adc a,40h
+				daa
+				call outc				; print character
+				ret
 printline:
 				ld a,(de)				; ** PrintLine **
 				ld l,a					; low order line number
@@ -1310,6 +1330,29 @@ pr0:
 				ld c,l
 				jr pr3
 pr1:
+				call testc				; is it a dollar?
+				.db '$'
+				.db pr4-$-1
+				call expr
+				ld c,l
+				call testc				; do we have a comma?
+				.db ','
+				.db pr6-$-1
+				push bc
+				call expr
+				pop bc
+				ld a,8					; 8 bits?
+				cp c
+				jp nz,pr9				; no, try 16
+				call printhex8			; yes, print a single hex byte
+				jp pr3
+pr9:
+				ld a,10h				; 16 bits?
+				cp c
+				jp nz,qhow				; no, show error message
+				call printhex			; yes, print two hex bytes
+				jp pr3
+pr4:
 				call qtstg				; is it a string?
 				jr pr8
 pr3:
@@ -1529,12 +1572,8 @@ init:
 				ld hl,textbegin			; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
-				ld d,19h				; clear the screen
-patloop:
-				call crlf				; by outputting 25 clear lines
-				dec d
-				jr nz,patloop
-				ld de,msg1				; then output welcome message
+				call crlf
+				ld de,msg1				; output welcome message
 				call printstr
 				call crlf
 				call size				; output free size message

@@ -1569,6 +1569,12 @@ nx2:
 init:
 				ld hl,start				; initialise random pointer
 				ld (rndptr),hl
+				ld hl,usrfunc			; initialise user defined function
+				ld (usrptr),hl
+				ld a,0c3h
+				ld (usrfunc),a			; initiase default USR() behaviour
+				ld hl,qhow				; (i.e. HOW? error)
+				ld (usrfunc+1),hl
 				ld hl,textbegin			; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
@@ -1834,10 +1840,9 @@ ex5:
 LST_ROM:		; all the above _can_ be in rom
 				; all following *must* be in ram
 				.org (TBC_LOC + 09feh)
-usrptr:			.db usrfunc & 0ffh		; points to user defined function area
-				.db (usrfunc >> 8) & 0ffh
+usrptr:			.ds 2					; -> user defined function area
 				.org (TBC_LOC + 0a00h)
-usrfunc			jp qhow					; default user defined function
+usrfunc			.ds 2					; start of user defined function area
 				.org (TBC_LOC + 0c00h)	; start of state
 ocsw			.ds 1					; output control switch
 current			.ds 2					; points to current line

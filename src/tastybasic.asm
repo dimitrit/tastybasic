@@ -509,6 +509,22 @@ size:
 				call subde
 				pop de
 				ret
+clrvars:
+				ld hl,(textunfilled)	; ** ClearVars**
+				push de					; get the number of bytes available
+				ex de,hl				; for variable storge
+				ld hl,varend
+				call subde
+				ld b,h					; and save in bc
+				ld c,l
+				ld hl,(textunfilled)	; clear the first byte
+				ld d,h
+				ld e,l
+				inc de
+				ld (hl),0h
+				ldir					; and repeat for all the others
+				pop de
+				ret
 
 ;*************************************************************
 ;
@@ -1210,9 +1226,11 @@ st4:
 ; GO EXECUTE NEXT COMMAND.  (THIS IS DONE IN 'FINISH'.)
 ;*************************************************************
 ;
-; *** NEW *** STOP *** RUN (& FRIENDS) *** & GOTO ***
+; *** NEW *** CLEAR *** STOP *** RUN (& FRIENDS) *** GOTO ***
 ;
 ; 'NEW(CR)' SETS 'TXTUNF' TO POINT TO 'TXTBGN'
+;
+; 'CLEAR(CR)' CLEARS ALL VARIABLES
 ;
 ; 'END(CR)' GOES BACK TO 'RSTART'
 ;
@@ -1228,14 +1246,6 @@ st4:
 ; 'GOTO EXPR(CR)' EVALUATES THE EXPRESSION, FIND THE TARGET
 ; LINE, AND JUMP TO 'RUNTSL' TO DO IT.
 ;*************************************************************
-
-new:
-				call endchk				; ** New **
-				ld hl,textbegin
-				ld (textunfilled),hl
-endd:
-				call endchk				; ** End **
-				jp rstart
 #ifndef ZEMU
 bye:
 				call endchk				; ** Reboot **
@@ -1244,6 +1254,16 @@ bye:
 				CALL HB_BNKCALL			; DOES NOT RETURN
 				HALT
 #endif
+new:
+				call endchk				; ** New **
+				ld hl,textbegin
+				ld (textunfilled),hl
+clear:
+				call clrvars			; ** Clear **
+				jp rstart
+endd:
+				call endchk				; ** End **
+				jp rstart
 run:
 				call endchk				; ** Run **
 				ld de,textbegin
@@ -1578,6 +1598,7 @@ init:
 				ld hl,textbegin			; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
+				call clrvars			; clear variables
 				call crlf
 				ld de,msg1				; output welcome message
 				call printstr
@@ -1733,6 +1754,12 @@ tab1:			; direct commands
 				dwa(run)
 				.db "NEW"
 				dwa(new)
+				.db "CLEAR"
+				dwa(clear)
+#ifndef ZEMU
+				.db	"BYE"
+				dwa(bye)
+#endif
 tab2:			; direct/statement
 				.db "NEXT"
 				dwa(next)
@@ -1758,10 +1785,6 @@ tab2:			; direct/statement
 				dwa(poke)
 				.db "END"
 				dwa(endd)
-#ifndef ZEMU
-				.db	"BYE"
-				dwa(bye)
-#endif
 				dwa(deflt)
 tab4:			; functions
 				.db "PEEK"
@@ -1860,6 +1883,7 @@ textbegin		.ds 2					; start of text save area
 				.org (TBC_LOC + 07dffh)
 textend			.ds 0					; end of text area
 varbegin		.ds 55					; variable @(0)
+varend			.ds 0					; end of variable area
 buffer			.ds 72					; input buffer
 bufend			.ds 1
 stacklimit		.ds 1

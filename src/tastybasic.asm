@@ -24,21 +24,21 @@
 
 #define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
 
-ctrlc			.equ 03h
+ctrlc				.equ 03h
 bs				.equ 08h
 lf				.equ 0ah
 cr				.equ 0dh
-ctrlo			.equ 0fh
-ctrlu			.equ 15h
+ctrlo				.equ 0fh
+ctrlu				.equ 15h
 
 #ifdef ZEMU								; Z80 Emulator
-tty_data		.equ 7ch
-tty_status		.equ 7dh
-rx_full			.equ 1
-tx_empty		.equ 0
-TBC_LOC			.equ 0
+tty_data			.equ 7ch
+tty_status			.equ 7dh
+rx_full				.equ 1
+tx_empty			.equ 0
+TBC_LOC				.equ 0
 #else									; RomWBW
-#include		"std.asm"
+#include			"std.asm"
 #endif
 				.org TBC_LOC
 start:
@@ -47,7 +47,7 @@ start:
 				jp init
 testc:
 				ex (sp),hl				; ** TestC **
-				call skipspace			; ignore spaces
+				call skipspace				; ignore spaces
 				cp (hl)					; test character
 				inc hl					; compare the byte that follows the
 				jr z,tc1				; call instruction with the text pointer
@@ -68,7 +68,7 @@ skipspace:
 				cp ' '					; ignore spaces
 				ret nz					; in text (where de points)
 				inc de					; and return the first non-blank
-				jp skipspace			; character in A
+				jp skipspace				; character in A
 
 expr:
 				call expr2				; ** Expr **
@@ -132,12 +132,12 @@ iff:
 if1:
 				ld a,h					; is the expr = 0?
 				or l
-				jp nz,runsml			; no, continue
-				call findskip			; yes, skip rest of line
-				jp nc,runtsl			; and run the next line
+				jp nz,runsml				; no, continue
+				call findskip				; yes, skip rest of line
+				jp nc,runtsl				; and run the next line
 				jp rstart				; if no, restart
 inputerror:
-				ld hl,(stkinp)			; ** InputError **
+				ld hl,(stkinp)				; ** InputError **
 				ld sp,hl				; restore old sp and old current
 				pop hl
 				ld (current),hl
@@ -147,26 +147,26 @@ input:
 				push de					; ** Input **
 				call qtstg				; is next item a string?
 				jp ip2					; no
-				call testvar			; yes and followed by a variable?
+				call testvar				; yes and followed by a variable?
 				jp c,ip4				; no
 				jp ip3					; yes, input variable
 ip2:
 				push de					; save for printstr
-				call testvar			; must be variable
+				call testvar				; must be variable
 				jp c,qwhat				; no, what?
 				ld a,(de)				; prepare for printstr
 				ld c,a
 				sub a
 				ld (de),a
 				pop de
-				call printstr			; print string as prompt
+				call printstr				; print string as prompt
 				ld a,c					; restore text
 				dec de
 				ld (de),a
 ip3:
 				push de					; save text pointer
 				ex de,hl
-				ld hl,(current)			; also save current
+				ld hl,(current)				; also save current
 				push hl
 				ld hl,input
 				ld (current),hl
@@ -285,7 +285,7 @@ ue1:
 ;*************************************************************
 
 expr1:
-				ld hl,tab8-1			; look up rel.op
+				ld hl,tab8-1				; look up rel.op
 				jp exec					; go do it
 xp11:
 				call xp18				; rel.op.'>='
@@ -375,7 +375,7 @@ xp25:
 xp26:
 				push hl					; yes, save first <expr3>
 				call expr3				; get second <expr3>
-				call changesign			; negate
+				call changesign				; negate
 				jr xp24					; and add them
 expr3:
 				call expr4				; get first expr4
@@ -388,7 +388,7 @@ xp31:
 				ld b,0					; clear b for sign
 				call checksign
 				ex (sp),hl				; first in hl
-				call checksign			; check sign of first
+				call checksign				; check sign of first
 				ex de,hl
 				ex (sp),hl
 				ld a,h					; is hl > 255?
@@ -416,9 +416,9 @@ xp34:
 				push hl					; yes, save first <expr4>
 				call expr4				; and get the second one
 				ld b,0h					; clear b for sign
-				call checksign			; check sign of the second
+				call checksign				; check sign of the second
 				ex (sp),hl				; get the first in hl
-				call checksign			; check sign of first
+				call checksign				; check sign of first
 				ex de,hl
 				ex (sp),hl
 				ex de,hl
@@ -437,10 +437,10 @@ xp35:
 				jp m,qhow				; else it's overflow
 				ld a,b
 				or a
-				call m,changesign		; change sign if needed
+				call m,changesign			; change sign if needed
 				jp xp31					; look for more terms
 expr4:
-				ld hl,tab4-1			; find function in tab4
+				ld hl,tab4-1				; find function in tab4
 				jp exec					; and execute it
 xp40:
 				call testvar
@@ -451,7 +451,7 @@ xp40:
 				ld l,a
 				ret
 xp41:
-				call testnum			; or is it a number
+				call testnum				; or is it a number
 				ld a,b					; number of digits
 				or a
 				ret nz					; ok
@@ -477,7 +477,7 @@ rnd:
 				jp z,qhow
 				push de					; save de and hl
 				push hl
-				ld hl,(rndptr)			; get memory as random number
+				ld hl,(rndptr)				; get memory as random number
 				ld de,LST_ROM
 				call comp
 				jr c,ra1				; wrap around if last
@@ -502,7 +502,7 @@ abs:
 				inc de
 				ret
 size:
-				ld hl,(textunfilled)	; ** Size **
+				ld hl,(textunfilled)			; ** Size **
 				push de					; get the number of free bytes between
 				ex de,hl				; and varbegin
 				ld hl,varbegin
@@ -510,14 +510,14 @@ size:
 				pop de
 				ret
 clrvars:
-				ld hl,(textunfilled)	; ** ClearVars**
+				ld hl,(textunfilled)			; ** ClearVars**
 				push de					; get the number of bytes available
 				ex de,hl				; for variable storge
 				ld hl,varend
 				call subde
 				ld b,h					; and save in bc
 				ld c,l
-				ld hl,(textunfilled)	; clear the first byte
+				ld hl,(textunfilled)			; clear the first byte
 				ld d,h
 				ld e,l
 				inc de
@@ -635,7 +635,7 @@ ck1:
 ; 'AHOW' AND 'AHOW' IN THE ZERO PAGE SECTION ALSO DO THIS.
 ;*************************************************************
 setval:
-				call testvar			; ** SetVal **
+				call testvar				; ** SetVal **
 				jp c,qwhat				; no variable
 				push hl					; save address of var
 				call testc				; do we have =?
@@ -666,7 +666,7 @@ fi1:
 fi2:
 				ret						; else return to caller
 endchk:
-				call skipspace			; ** EndChk **
+				call skipspace				; ** EndChk **
 				cp cr					; ends with cr?
 				ret z					; ok, otherwise say 'what?'
 qwhat:
@@ -675,13 +675,13 @@ awhat:
 				ld de,what				; ** AWhat **
 handleerror:
 				sub a					; ** Error **
-				call printstr			; print error message
+				call printstr				; print error message
 				pop de
 				ld a,(de)				; save the character
 				push af					; at where old de points
 				sub a					; and put a 0 (zero) there
 				ld (de),a
-				ld hl,(current)			; get the current line number
+				ld hl,(current)				; get the current line number
 				push hl
 				ld a,(hl)				; check the value
 				inc hl
@@ -690,8 +690,8 @@ handleerror:
 				jp z,rstart				; if zero, just rerstart
 				ld a,(hl)				; if negative
 				or a
-				jp m,inputerror			; then redo input
-				call printline			; else print the line
+				jp m,inputerror				; then redo input
+				call printline				; else print the line
 				dec de					; up to where the 0 is
 				pop af					; restore the character
 				ld (de),a
@@ -735,7 +735,7 @@ asorry:
 ;*************************************************************
 getline:
 				call outc				; ** GetLine **
-				ld de,buffer			; prompt and initalise pointer
+				ld de,buffer				; prompt and initalise pointer
 gl1:
 				call chkio				; check keyboard
 				jr z,gl1				; no input, so wait
@@ -757,7 +757,7 @@ gl1:
 				jr nz,gl1				; yes, get next char
 gl3:
 				ld a,e					; delete last character
-				cp buffer & 0ffh		; if there are any?
+				cp buffer & 0ffh			; if there are any?
 				jr z,gl4				; no, redo whole line
 				dec de					; yes, back pointer
 				ld a,08h				; and echo a backspace
@@ -771,11 +771,11 @@ findline:
 				ld a,h					; ** FindLine **
 				or a					; check the sign of hl
 				jp m,qhow				; it cannot be negative
-				ld de,textbegin			; initialise the text pointer
+				ld de,textbegin				; initialise the text pointer
 findlineptr:
 fl1:
 				push hl					; save line number
-				ld hl,(textunfilled)	; check if we passed end
+				ld hl,(textunfilled)			; check if we passed end
 				dec hl
 				call comp
 				pop hl					; retrieve line number
@@ -789,7 +789,7 @@ fl1:
 				jr c,fl2				; no, not there yet
 				dec de  				; else we either found it
 				or b					; or it's not there
-				ret						; nc,z:found; nc,nz:no
+				ret					; nc,z:found; nc,nz:no
 findnext:
 				inc de					; find next line
 fl2:
@@ -842,7 +842,7 @@ qtstg:
 				.db qt3-$-1
 				ld a,22h
 qt1:
-				call printstr			; print until another
+				call printstr				; print until another
 				cp cr
 				pop hl
 				jp z,runnxl
@@ -871,13 +871,13 @@ qt5:
 
 printnum:
 				ld b,0h					; ** PrintNum **
-				call checksign			; check sign
+				call checksign				; check sign
 				jp p,pn1				; no sign
 				ld b,'-'
 				dec c
 pn1:
 				push de					; save
-				ld de, 000ah			; decimal
+				ld de, 000ah				; decimal
 				push de					; save as flag
 				dec c					; c=spaces
 				push bc					; save sign & space
@@ -1007,12 +1007,12 @@ pp1:
 				push bc					; bc = return address
 				ret
 pusha:
-				ld hl,stacklimit		; ** PushA **
+				ld hl,stacklimit			; ** PushA **
 				call changesign
 				pop bc					; bc = return address
 				add hl,sp				; is stack near the top?
-				jp nc,qsorry			; yes, sorry
-				ld hl,(loopvar)			; else save loop variables
+				jp nc,qsorry				; yes, sorry
+				ld hl,(loopvar)				; else save loop variables
 				ld a,h
 				or l
 				jr z,pu1				; only when loopvar not 0
@@ -1031,7 +1031,7 @@ pu1:
 				ret
 
 testvar:
-				call skipspace			; ** testvar **
+				call skipspace				; ** testvar **
 				sub '@'					; test variables
 				ret c					; not a variable
 				jr nz,tv1				; not @ array
@@ -1044,7 +1044,7 @@ testvar:
 				call size				; find the size of free
 				call comp
 				jp c,asorry				; yes, sorry
-				ld hl,varbegin			; no, get address of @(expr) and
+				ld hl,varbegin				; no, get address of @(expr) and
 				call subde				; put it in hl
 				pop de
 				ret
@@ -1052,8 +1052,8 @@ tv1:
 				cp 1bh					; not @, is it A to Z
 				ccf
 				ret c
-				inc de					; if A trhough Z
-				ld hl,varbegin			; calculate address of that variable
+				inc de					; if A through Z
+				ld hl,varbegin				; calculate address of that variable
 				rlca					; and return it in hl
 				add a,l					; with the c flag cleared
 				ld l,a
@@ -1099,12 +1099,12 @@ ahow:
 				ld de,how
 				jp handleerror
 
-msg1			.db "TASTY BASIC",cr
-msg2			.db " BYTES FREE",cr
+msg1				.db "TASTY BASIC",cr
+msg2				.db " BYTES FREE",cr
 how				.db "HOW?",cr
 ok				.db "OK",cr
-what			.db "WHAT?",cr
-sorry			.db "SORRY",cr
+what				.db "WHAT?",cr
+sorry				.db "SORRY",cr
 
 ;*************************************************************
 ;
@@ -1145,8 +1145,8 @@ st1:
 				sub a					; a=0
 				ld de,ok				; print ok
 				call printstr
-				ld hl,st2 + 1			; literal zero
-				ld (current),hl			; reset current line pointer
+				ld hl,st2 + 1				; literal zero
+				ld (current),hl				; reset current line pointer
 st2:
 				ld hl,0000h
 				ld (loopvar),hl
@@ -1155,8 +1155,8 @@ st3:
 				ld a,'>'				; initialise prompt
 				call getline
 				push de					; de points to end of line
-				ld de,buffer			; point de to beginning of line
-				call testnum			; check if it is a number
+				ld de,buffer				; point de to beginning of line
+				call testnum				; check if it is a number
 				call skipspace
 				ld a,h					; hl = value of the number, or
 				or l					; 0 if no number was found
@@ -1174,21 +1174,21 @@ st3:
 				sub e
 
 				push af					; a = number of bytes in line
-				call findline			; find this line in save area
+				call findline				; find this line in save area
 				push de					; de points to save area
 				jr nz,st4				; nz: line not found
 				push de					; z: found, delete it
-				call findnext			; find next line
-				; de -> next line
+				call findnext				; find next line
+									; de -> next line
 				pop bc					; bc -> line to be deleted
-				ld hl,(textunfilled)	; hl -> unfilled text area
+				ld hl,(textunfilled)			; hl -> unfilled text area
 				call mvup				; move up to delete
 				ld h,b					; txtunf -> unfilled area
 				ld l,c
 				ld (textunfilled),hl
 st4:
 				pop bc					; get ready to insert
-				ld hl,(textunfilled)	; but first check if the length
+				ld hl,(textunfilled)			; but first check if the length
 				pop af					; of new line is 3 (line# and cr)
 				push hl
 				cp 3h					; if so, do not insert
@@ -1198,10 +1198,10 @@ st4:
 				ld a,0
 				adc a,h
 				ld h,a					; hl -> new unfilled area
-				ld de,textend			; check to see if there is space
+				ld de,textend				; check to see if there is space
 				call comp
-				jp nc,qsorry			; no, sorry
-				ld (textunfilled),hl	; ok, update textunfilled
+				jp nc,qsorry				; no, sorry
+				ld (textunfilled),hl			; ok, update textunfilled
 				pop de					; de -> old unfilled area
 				call mvdown
 				pop de					; de,hl -> begin,end
@@ -1249,17 +1249,17 @@ st4:
 #ifndef ZEMU
 bye:
 				call endchk				; ** Reboot **
-				LD A,BID_BOOT			; BOOT BANK
-				LD HL,0			 		; ADDRESS ZERO
-				CALL HB_BNKCALL			; DOES NOT RETURN
-				HALT
+				ld a,bid_boot				; boot bank
+				ld hl,0			 		; address zero
+				call hb_bnkcall				; does not return
+				halt
 #endif
 new:
 				call endchk				; ** New **
 				ld hl,textbegin
 				ld (textunfilled),hl
 clear:
-				call clrvars			; ** Clear **
+				call clrvars				; ** Clear **
 				jp rstart
 endd:
 				call endchk				; ** End **
@@ -1273,19 +1273,19 @@ runnxl:
 				jp c,rstart
 runtsl:
 				ex de,hl				; ** Run Tsl
-				ld (current),hl			; set current -> line #
+				ld (current),hl				; set current -> line #
 				ex de,hl
 				inc de
 				inc de
 runsml:
 				call chkio				; ** Run Same Line **
-				ld hl, tab2-1			; find the command in table 2
+				ld hl, tab2-1				; find the command in table 2
 				jp exec					; and execute it
 goto:
 				call expr
 				push de					; save for error routine
 				call endchk				; must find a cr
-				call findline			; find the target line
+				call findline				; find the target line
 				jp nz, ahow				; no such line #
 				pop af					; clear the pushed de
 				jr runtsl				; go do it
@@ -1319,14 +1319,14 @@ goto:
 ; ENDED WITH A COMMA, NO (CRLF) IS GENERATED.
 ;*************************************************************
 list:
-				call testnum			; check if there is a number
+				call testnum				; check if there is a number
 				call endchk				; if no number we get a 0
-				call findline			; find this or next line
+				call findline				; find this or next line
 ls1:
 				jp c,rstart
-				call printline			; print the line
+				call printline				; print the line
 				call chkio				; stop on ctrl-c
-				call findlineptr		; find the next line
+				call findlineptr			; find the next line
 				jr ls1					; and loop back
 
 print:
@@ -1364,13 +1364,13 @@ pr1:
 				ld a,8					; 8 bits?
 				cp c
 				jp nz,pr9				; no, try 16
-				call printhex8			; yes, print a single hex byte
+				call printhex8				; yes, print a single hex byte
 				jp pr3
 pr9:
 				ld a,10h				; 16 bits?
 				cp c
 				jp nz,qhow				; no, show error message
-				call printhex			; yes, print two hex bytes
+				call printhex				; yes, print two hex bytes
 				jp pr3
 pr4:
 				call qtstg				; is it a string?
@@ -1414,11 +1414,11 @@ gosub:
 				call pusha				; ** Gosub **
 				call expr				; save the current "FOR" params
 				push de					; and text pointer
-				call findline			; find the target line
+				call findline				; find the target line
 				jp nz,ahow				; how? because it doesn't exist
-				ld hl,(current)			; found it, save old 'current'
+				ld hl,(current)				; found it, save old 'current'
 				push hl
-				ld hl,(stkgos)			; and 'stkgos'
+				ld hl,(stkgos)				; and 'stkgos'
 				push hl
 				ld hl,0000h				; and load new ones
 				ld (loopvar),hl
@@ -1427,7 +1427,7 @@ gosub:
 				jp runtsl				; and run the line
 return:
 				call endchk				; there must be a cr
-				ld hl,(stkgos)			; check old stack pointer
+				ld hl,(stkgos)				; check old stack pointer
 				ld a,h					;
 				or l
 				jp z,what				; what? not found
@@ -1435,7 +1435,7 @@ return:
 				pop hl
 				ld (stkgos),hl
 				pop hl
-				ld (current),hl			; and old 'current'
+				ld (current),hl				; and old 'current'
 				pop de					; and old text pointer
 				call popa				; and old 'FOR' params
 				call finish				; and we're back
@@ -1476,13 +1476,13 @@ for:
 				call pusha				; save old save area
 				call setval				; set the control variable
 				dec hl					; its address is hl
-				ld (loopvar),hl			; save that
-				ld hl,tab5-1			; use 'exec' to find 'TO'
+				ld (loopvar),hl				; save that
+				ld hl,tab5-1				; use 'exec' to find 'TO'
 				jp exec
 fr1:
 				call expr				; evaluate the limit
-				ld (looplmt),hl			; and save it
-				ld hl,tab6-1			; use 'exec' to find 'STEP'
+				ld (looplmt),hl				; and save it
+				ld hl,tab6-1				; use 'exec' to find 'STEP'
 				jp exec
 fr2:
 				call expr				; found 'STEP'
@@ -1490,9 +1490,9 @@ fr2:
 fr3:
 				ld hl,0001h				; no 'STEP' so set to 1
 fr4:
-				ld (loopinc),hl			; and save that too
+				ld (loopinc),hl				; and save that too
 fr5:
-				ld hl,(current)			; save current line number
+				ld hl,(current)				; save current line number
 				ld (loopln),hl
 				ex de,hl				; and text pointer
 				ld (loopptr),hl
@@ -1526,17 +1526,17 @@ fr7:
 				call mvdown
 				ld sp,hl
 fr8:
-				ld hl,(loopptr)			; all done
+				ld hl,(loopptr)				; all done
 				ex de,hl
 				call finish
 next:
-				call testvar			; get address of variable
+				call testvar				; get address of variable
 				jp c,qwhat				; what, no variable
-				ld (varnext),hl			; yes, save it
+				ld (varnext),hl				; yes, save it
 nx0:
 				push de					; save the text pointer
 				ex de,hl
-				ld hl,(loopvar)			; get the variable in 'FOR'
+				ld hl,(loopvar)				; get the variable in 'FOR'
 				ld a,h
 				or l					; if 0, there never was one
 				jp z,awhat
@@ -1544,7 +1544,7 @@ nx0:
 				jr z,nx3				; yes, they agree
 				pop de  				; no, complete current loop
 				call popa
-				ld hl,(varnext)			; and pop one level
+				ld hl,(varnext)				; and pop one level
 				jr nx0					; go check again
 nx3:
 				ld e,(hl)
@@ -1574,7 +1574,7 @@ nx1:
 				call ckhlde				; compare with limit
 				pop de					; restore the text pointer
 				jr c,nx2				; over the limit
-				ld hl,(loopln)			; within the limit
+				ld hl,(loopln)				; within the limit
 				ld (current),hl
 				ld hl,(loopptr)
 				ex de,hl
@@ -1589,16 +1589,16 @@ nx2:
 init:
 				ld hl,start				; initialise random pointer
 				ld (rndptr),hl
-				ld hl,usrfunc			; initialise user defined function
+				ld hl,usrfunc				; initialise user defined function
 				ld (usrptr),hl
 				ld a,0c3h
-				ld (usrfunc),a			; initiase default USR() behaviour
+				ld (usrfunc),a				; initiase default USR() behaviour
 				ld hl,qhow				; (i.e. HOW? error)
 				ld (usrfunc+1),hl
-				ld hl,textbegin			; initialise text area pointers
+				ld hl,textbegin				; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
-				call clrvars			; clear variables
+				call clrvars				; clear variables
 				call crlf
 				ld de,msg1				; output welcome message
 				call printstr
@@ -1610,9 +1610,9 @@ init:
 				jp rstart
 
 chkio:
-				call haschar			; check if character available
+				call haschar				; check if character available
 				ret z					; no, return
-				call getchar			; get the character
+				call getchar				; get the character
 				push bc					; is it a lf?
 				ld b,a
 				sub lf
@@ -1629,7 +1629,7 @@ io1:
 				ld a,0h					; clear
 				or a					; set the z-flag
 				pop bc					; restore bc
-				ret						; return with z set
+				ret					; return with z set
 io2:
 				cp 60h					; is it lower case?
 				jp c,io3				; no
@@ -1644,9 +1644,9 @@ outc:
 				push af
 				ld a,(ocsw)				; check output control switch
 				or a
-				jr nz,oc1   			; output is enabled
+				jr nz,oc1   				; output is enabled
 				pop af					; output is disabled
-				ret						; so return
+				ret					; so return
 oc1:
 				pop af
 				call putchar
@@ -1655,11 +1655,11 @@ oc1:
 				ld a,lf					; send a lf
 				call outc
 				ld a,cr					; restore register
-				ret						; and return
+				ret					; and return
 putchar:
 #ifdef ZEMU
-				call uart_tx_ready		; see if transmit is available
-				out (tty_data),a		; and send it
+				call uart_tx_ready			; see if transmit is available
+				out (tty_data),a			; and send it
 				ret
 uart_tx_ready:
 				push af
@@ -1669,55 +1669,55 @@ uart_tx_ready_loop:
 				jp z,uart_tx_ready_loop
 				pop af
 #else
-				PUSH	AF
-				PUSH	BC
-				PUSH	DE
-				PUSH	HL
-											; OUTPUT CHARACTER TO CONSOLE VIA HBIOS
-				LD		E,A					; OUTPUT CHAR TO E
-				LD		C,CIODEV_CONSOLE	; CONSOLE UNIT TO C
-				LD		B,BF_CIOOUT			; HBIOS FUNC: OUTPUT CHAR
-				RST		08					; HBIOS OUTPUTS CHARACTER
-				POP		HL
-				POP		DE
-				POP		BC
-				POP	 AF
+				push af
+				push bc
+				push de
+				push hl
+									; output character to console via hbios
+				ld e,a					; output char to e
+				ld c,ciodev_console			; console unit to c
+				ld b,bf_cioout				; hbios func: output char
+				rst 08					; hbios outputs character
+				pop hl
+				pop de
+				pop bc
+				pop af
 #endif
 				ret
 haschar:
 #ifdef ZEMU
-				in a,(tty_status)		; check if character available
+				in a,(tty_status)			; check if character available
 				bit rx_full,a
 #else
-				PUSH	BC
-				PUSH	DE
-				PUSH	HL
-										; GET CONSOLE INPUT STATUS VIA HBIOS
-				LD		C,CIODEV_CONSOLE; CONSOLE UNIT TO C
-				LD		B,BF_CIOIST		; HBIOS FUNC: INPUT STATUS
-				RST		08				; HBIOS RETURNS STATUS IN A
-				POP		HL
-				POP		DE
-				POP		BC
+				push bc
+				push de
+				push hl
+									; get console input status via hbios
+				ld c,ciodev_console			; console unit to c
+				ld b,bf_cioist				; hbios func: input status
+				rst 08					; hbios returns status in a
+				pop hl
+				pop de
+				pop bc
 #endif
 				ret
 
 getchar:
 #ifdef ZEMU
-				in a,(tty_data)			; get the character
+				in a,(tty_data)				; get the character
 #else
-				PUSH	BC
-				PUSH	DE
-				PUSH	HL
-											; INPUT CHARACTER FROM CONSOLE VIA HBIOS
-				LD		C,CIODEV_CONSOLE	; CONSOLE UNIT TO C
-				LD		B,BF_CIOIN			; HBIOS FUNC: INPUT CHAR
-				RST		08					; HBIOS READS CHARACTDR
-				LD		A,E					; MOVE CHARACTER TO A FOR RETURN
-											; RESTORE REGISTERS (AF IS OUTPUT)
-				POP		HL
-				POP		DE
-				POP		BC
+				push bc
+				push de
+				push hl
+									; input character from console via hbios
+				ld c,ciodev_console			; console unit to c
+				ld b,bf_cioin				; hbios func: input char
+				rst 08					; hbios reads charactdr
+				ld a,e					; move character to a for return
+									; restore registers (af is output)
+				pop hl
+				pop de
+				pop bc
 #endif
 				ret
 
@@ -1747,7 +1747,7 @@ getchar:
 ; STRING DOES NOT MATCH ANY OF THE OTHER ITEMS, IT WILL
 ; MATCH THIS NULL ITEM AS DEFAULT.
 ;*************************************************************
-tab1:			; direct commands
+tab1:									; direct commands
 				.db "LIST"
 				dwa(list)
 				.db "RUN"
@@ -1757,10 +1757,10 @@ tab1:			; direct commands
 				.db "CLEAR"
 				dwa(clear)
 #ifndef ZEMU
-				.db	"BYE"
+				.db "BYE"
 				dwa(bye)
 #endif
-tab2:			; direct/statement
+tab2:									; direct/statements
 				.db "NEXT"
 				dwa(next)
 				.db "LET"
@@ -1786,7 +1786,7 @@ tab2:			; direct/statement
 				.db "END"
 				dwa(endd)
 				dwa(deflt)
-tab4:			; functions
+tab4:									; functions
 				.db "PEEK"
 				dwa(peek)
 				.db "RND"
@@ -1798,14 +1798,14 @@ tab4:			; functions
 				.db "SIZE"
 				dwa(size)
 				dwa(xp40)
-tab5:			; 'TO' in 'FOR'
+tab5:									; 'TO' in 'FOR'
 				.db "TO"
 				dwa(fr1)
-tab6:			; 'STEP' in 'FOR'
+tab6:									; 'STEP' in 'FOR'
 				.db "STEP"
 				dwa(fr2)
 				dwa(fr3)
-tab8:			; relational operators
+tab8:									; relational operators
 				.db ">="
 				dwa(xp11)
 				.db "#"
@@ -1821,9 +1821,9 @@ tab8:			; relational operators
 				dwa(xp17)
 
 direct:
-				ld hl,tab1-1			; ** Direct **
+				ld hl,tab1-1				; ** Direct **
 exec:
-				call skipspace			; ** Exec **
+				call skipspace				; ** Exec **
 				push de
 ex1:
 				ld a,(de)
@@ -1860,42 +1860,42 @@ ex5:
 				jp (hl)
 
 ;-------------------------------------------------------------------------------
-LST_ROM:		; all the above _can_ be in rom
+LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
 				.org (TBC_LOC + 09feh)
-usrptr:			.ds 2					; -> user defined function area
+usrptr:				.ds 2					; -> user defined function area
 				.org (TBC_LOC + 0a00h)
-usrfunc			.ds 2					; start of user defined function area
-				.org (TBC_LOC + 0c00h)	; start of state
-ocsw			.ds 1					; output control switch
-current			.ds 2					; points to current line
-stkgos			.ds 2					; saves sp in 'GOSUB'
-varnext			.ds 2					; temp storage
-stkinp			.ds 2					; save sp in 'INPUT'
-loopvar			.ds 2					; 'FOR' loop save area
-loopinc			.ds 2					; loop increment
-looplmt			.ds 2					; loop limit
-loopln			.ds 2					; loop line number
-loopptr			.ds 2					; loop text pointer
-rndptr			.ds 2					; random number pointer
-textunfilled	.ds 2					; -> unfilled text area
-textbegin		.ds 2					; start of text save area
+usrfunc				.ds 2					; start of user defined function area
+				.org (TBC_LOC + 0c00h)			; start of state
+ocsw				.ds 1					; output control switch
+current				.ds 2					; points to current line
+stkgos				.ds 2					; saves sp in 'GOSUB'
+varnext				.ds 2					; temp storage
+stkinp				.ds 2					; save sp in 'INPUT'
+loopvar				.ds 2					; 'FOR' loop save area
+loopinc				.ds 2					; loop increment
+looplmt				.ds 2					; loop limit
+loopln				.ds 2					; loop line number
+loopptr				.ds 2					; loop text pointer
+rndptr				.ds 2					; random number pointer
+textunfilled			.ds 2					; -> unfilled text area
+textbegin			.ds 2					; start of text save area
 				.org (TBC_LOC + 07dffh)
-textend			.ds 0					; end of text area
-varbegin		.ds 55					; variable @(0)
-varend			.ds 0					; end of variable area
-buffer			.ds 72					; input buffer
-bufend			.ds 1
-stacklimit		.ds 1
+textend				.ds 0					; end of text area
+varbegin			.ds 55					; variable @(0)
+varend				.ds 0					; end of variable area
+buffer				.ds 72					; input buffer
+bufend				.ds 1
+stacklimit			.ds 1
 				.org (TBC_LOC + 07fffh)
-stack			.equ $
+stack				.equ $
 
 #ifndef ZEMU
-SLACK			.EQU	(TBC_END - LST_ROM)
-				.FILL	SLACK,'t'
+slack				.equ (tbc_end - lst_rom)
+				.fill slack,'t'
 
-				.ECHO	"TASTYBASIC space remaining: "
-				.ECHO	SLACK
-				.ECHO	" bytes.\n"
+				.echo "TASTYBASIC space remaining: "
+				.echo slack
+				.echo " bytes.\n"
 #endif
 				.end

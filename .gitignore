@@ -1,6 +1,9 @@
 bin
+diskdefs
 *.rom
 *.com
 *.bin
+*.lst
+*.img
 .idea
 .DS_Store

@@ -1373,7 +1373,7 @@ pr9:
 				jp pr3
 pr4:
 				call qtstg				; is it a string?
-				jr pr8
+				jp pr8
 pr3:
 				call testc				; is it a comma?
 				.db ','

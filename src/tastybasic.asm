@@ -1612,15 +1612,15 @@ init:
 ;*************************************************************
 
 #ifdef ZEMU
-#include			"src/zemu.asm"
+#include			"src/zemuio.asm"
 #endif
 
 #ifdef ROMWBW
-#include			"src/romwbw.asm"
+#include			"src/romwbwio.asm"
 #endif
 
 #ifdef CPM
-#include			"src/cpm.asm"
+#include			"src/cpmio.asm"
 #endif
 
 ;*************************************************************

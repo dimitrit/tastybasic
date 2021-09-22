@@ -22,6 +22,7 @@
 ; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
+HBIOS				.equ 08h
 USRPTR_OFFSET			.equ 09feh
 USRFUNC_OFFSET			.equ 0a00h
 INTERNAL_OFFSET			.equ 0c00h
@@ -43,7 +44,8 @@ putchar:
 				ld e,a					; output char to e
 				ld c,CIODEV_CONSOLE			; console unit to c
 				ld b,BF_CIOOUT				; hbios func: output char
-				rst 08					; hbios outputs character
+				rst HBIOS				; hbios outputs character
+
 				pop hl
 				pop de
 				pop bc
@@ -56,7 +58,8 @@ haschar:
 									; get console input status via hbios
 				ld c,CIODEV_CONSOLE			; console unit to c
 				ld b,BF_CIOIST				; hbios func: input status
-				rst 08					; hbios returns status in a
+				rst HBIOS				; hbios returns status in a
+
 				pop hl
 				pop de
 				pop bc
@@ -69,7 +72,7 @@ getchar:
 									; input character from console via hbios
 				ld c,CIODEV_CONSOLE			; console unit to c
 				ld b,BF_CIOIN				; hbios func: input char
-				rst 08					; hbios reads charactdr
+				rst HBIOS				; hbios reads charactdr
 				ld a,e					; move character to a for return
 									; restore registers (af is output)
 				pop hl

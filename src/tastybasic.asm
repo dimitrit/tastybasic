@@ -32,6 +32,7 @@ ctrlo				.equ 0fh
 ctrlu				.equ 15h
 
 stacksize			.equ 0100h
+bufsize				.equ 48h
 
 #ifdef ZEMU								; Z80 Emulator
 TBC_LOC				.equ 0
@@ -584,7 +585,7 @@ changesign:
 				ld a,h					; ** ChangeSign **
 				or l					; check if hl is zero
 				jp nz,cs1				; no, try to change sign
-				ret						; yes, return
+				ret					; yes, return
 cs1:
 				ld a,h					; change sign of hl
 				push af
@@ -1627,11 +1628,13 @@ init:
 chkio:
 				call haschar				; check if character available
 				ret z					; no, return
+#ifndef CPM
 				call getchar				; get the character
+#endif
 				push bc					; is it a lf?
 				ld b,a
 				sub lf
-				jr z,io1				; yes, ignore an return
+				jr z,io1				; yes, ignore a return
 				ld a,b					; no, restore a and bc
 				pop bc
 				cp ctrlo				; is it ctrl-o?
@@ -1814,11 +1817,11 @@ ex5:
 
 LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
-				.org (TBC_LOC + USRPTR_OFFSET)
+				.org TBC_LOC + USRPTR_OFFSET
 usrptr:				.ds 2					; -> user defined function area
-				.org (TBC_LOC + USRFUNC_OFFSET)
+				.org TBC_LOC + USRFUNC_OFFSET
 usrfunc				.ds 2					; start of user defined function area
-				.org (TBC_LOC + INTERNAL_OFFSET)	; start of state
+				.org TBC_LOC + INTERNAL_OFFSET		; start of state
 ocsw				.ds 1					; output control switch
 current				.ds 2					; points to current line
 stkgos				.ds 2					; saves sp in 'GOSUB'
@@ -1832,7 +1835,7 @@ loopptr				.ds 2					; loop text pointer
 rndptr				.ds 2					; random number pointer
 textunfilled			.ds 2					; -> unfilled text area
 textbegin			.ds 2					; start of text save area
-				.org (TBC_LOC + 07dffh)
+				.org TBC_LOC + TEXTEND_OFFSET
 textend				.ds 0					; end of text area
 varbegin			.ds 55					; variable @(0)
 varend				.ds 0					; end of variable area

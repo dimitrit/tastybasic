@@ -23,16 +23,37 @@
 
 USRPTR_OFFSET			.equ 09feh
 USRFUNC_OFFSET			.equ 0a00h
-INTERNAL_OFFSET			.equ 0c00h
-TEXTEND_OFFSET			.equ 07dffh
-STACK_OFFSET			.equ 07fffh
+INTERNAL_OFFSET			.equ 0b00h
+TEXTEND_OFFSET			.equ 07cffh
+STACK_OFFSET			.equ 07effh
 
+BDOS				.equ 05h				; standard cp/m entry
+DCONIO				.equ 06h				; direct console I/O
+INPREQ				.equ 0ffh				; console input request
 
-putchar:
+haschar:	
+				push	bc
+				push	de
+				ld	c,DCONIO			; direct console i/o
+				ld	e,INPREQ			; input request
+				call	BDOS				; any chr typed?
+				pop	de				; if yes, (a)<--char
+				pop	bc				; else    (a)<--00h (ignore chr)
+				or	a				
 				ret
-haschar:
-				ret
-getchar:
+;
+putchar:					
+				push	bc
+				push	de
+				push	af
+				push	hl
+				ld	c,DCONIO			; direct console i/o
+				ld	e,a				; output char (a)
+				call	BDOS
+				pop	hl
+				pop	af
+				pop	de
+				pop	bc
 				ret
 bye:
-				halt
+				jp 0					; does not return!

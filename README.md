@@ -81,7 +81,33 @@ The following example shows the bit summation for a given value:
 
 ## Building the ROM image
 
-Building the ROM image requires TASM (Telemark Assembler).
+Building Tasty Basic requires TASM (Telemark Assembler).
+
+Alternatively, non-Windows users can use the `uz80as` Z80 assembler ([Giner, 2021](##References)).
+
+## CP/M version of Tasty Basic
+A CP/M version of Tasty Basic can be built using the `-Dcpm` flag:
+
+```tasm.exe -t80 --dcpm tastybasic.asm tbasic.com tastybasic.lst```
+
+The resulting `tbasic.com` executable can be run in CP/M. For example:
+
+```
+B>TBASIC ↵
+
+TASTY BASIC
+29160 BYTES FREE
+
+OK
+>10 PRINT "HELLO WORLD ", ↵
+>RUN ↵
+HELLO WORLD 
+
+OK
+>BYE ↵
+
+B>
+```
 
 ## Running in Z80 Emulator
 Tasty Basic can be run in the Z80 Emulator ([Moore, 2015](##References)) when it is built with
@@ -125,6 +151,7 @@ For license details refer to the enclosed [LICENSE](../master/LICENSE) file.
 Ahl, D. H. (Ed.).(1978). _BASIC COMPUTER GAMES_. New York, NY: Workman Publishing  
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  
 Gabbard, D. (2017, October 10). _TinyBASIC for the z80 – TinyBASIC 2.0g._ Retrieved September 29, 2108, from [http://retrodepot.net/?p=274](http://retrodepot.net/?p=274)  
+Giner, J. (2021, August 1). _Micro Z80 assembler - uz80as._ Retrieved September 19, 2021, from [https://jorgicor.niobe.org/uz80as/](https://jorgicor.niobe.org/uz80as/)  
 Moore, W. J. (2015). _Z80 Emulator_ [Computer software]. Retrieved October 6, 2018, from [https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar](https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar)  
 Rauskolb, P. (1976, December). _DR. WANG'S PALO ALTO TINY BASIC._ Interface Age, (2)1, 92-108. Retrieved from [https://archive.org/stream/InterfaceAge197612/Interface%20Age%201976-12#page/n93/mode/1up](https://archive.org/stream/InterfaceAge197612/Interface%20Age%201976-12#page/n93/mode/1up)  
 Wang, L-C. (1976). Palo Alto Tiny BASIC. In J. C. Warren Jr. (Ed.), _Dr. Dobb's Journal of COMPUTER Calisthenics & Orthodontia_ (pp. 129-142). Menlo Park, CA: People's Computer Company

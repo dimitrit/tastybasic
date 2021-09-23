@@ -224,8 +224,10 @@ lt1:
 ;
 ; 'PEEK(<EXPR>)' RETURNS THE VALUE OF THE BYTE AT THE GIVEN
 ; ADDRESS.
-; 'POKE <expr1>,<expr1>' SETS BYTE AT ADDRESS <expr1> TO
+; 'POKE <expr1>,<expr2>' SETS BYTE AT ADDRESS <expr1> TO
 ; VALUE <expr2>
+; 'IN(<EXPR)' READS THE GIVEN PORT.
+; 'OUT <expr1>,<expr2>' WRITES VALUE <expr2> TO PORT <expr1>.
 ;
 ;*************************************************************
 peek:
@@ -233,9 +235,18 @@ peek:
 				ld a,h					; expression must be positive
 				or a
 				jp m,qhow
-				ld a,(hl)
+				ld a,(hl)				; peek address
 				ld h,0
 				ld l,a
+				ret
+inp:
+				call parn				; ** In(expr) **
+				ld a,0					; is port > 255?
+				cp h
+				jp nz,qhow				; yes, so not a valid port
+				ld c,l
+				in l,(c)				; read port
+				ld h,0
 				ret
 poke:
 				call expr				; ** Poke **
@@ -245,19 +256,40 @@ poke:
 				push hl
 				call testc				; is next char a comma?
 				.db ','
-				.db pk1-$-1				; what, no?
+				.db ot1-$-1				; what, no?
 				call expr				; get value to store
 				ld a,0					; is it > 255?
 				cp h
-				jp z,pk2				; no, all good
+				jp z,pk1				; no, all good
 				pop hl
-				jp m,qhow
-pk2:
+				jp qhow
+pk1:
 				ld a,l					; save value
 				pop hl
 				ld (hl),a
 				call finish
-pk1:
+outp:
+				call expr				; ** Out **
+				ld a,0					; is port > 255?
+				cp h
+				jp nz,qhow				; yes, so not a valid port
+				push hl
+				call testc				; is next char a comma?
+				.db ','
+				.db ot1-$-1				; what, no?
+				call expr				; get value to write
+				ld a,0					; is it > 255?
+				cp h
+				jp z,ot2				; no, all good
+				pop hl
+				jp qhow
+ot2:
+				ld a,l					; output value
+				pop hl
+				ld c,l
+				out (c),a
+				call finish
+ot1:
 				pop hl
 				jp qwhat
 usrexec:
@@ -672,7 +704,7 @@ fi1:
 				pop af					; yes, purge return address
 				jp runnxl				; run next line
 fi2:
-				ret						; else return to caller
+				ret					; else return to caller
 endchk:
 				call skipspace				; ** EndChk **
 				cp cr					; ends with cr?
@@ -1737,12 +1769,16 @@ tab2:									; direct/statements
 				dwa(print)
 				.db "POKE"
 				dwa(poke)
+				.db "OUT"
+				dwa(outp)
 				.db "END"
 				dwa(endd)
 				dwa(deflt)
 tab4:									; functions
 				.db "PEEK"
 				dwa(peek)
+				.db "IN"
+				dwa(inp)
 				.db "RND"
 				dwa(rnd)
 				.db "ABS"

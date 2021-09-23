@@ -22,7 +22,7 @@
 ; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
-#define dwa(addr) .db (addr >> 8) + 080h\ .db addr & 0ffh
+#define dwa(addr) 		.db (addr >> 8) + 080h\ .db addr & 0ffh
 
 ctrlc				.equ 03h
 bs				.equ 08h
@@ -31,18 +31,26 @@ cr				.equ 0dh
 ctrlo				.equ 0fh
 ctrlu				.equ 15h
 
+stacksize			.equ 0100h
+bufsize				.equ 48h
+
 #ifdef ZEMU								; Z80 Emulator
-tty_data			.equ 7ch
-tty_status			.equ 7dh
-rx_full				.equ 1
-tx_empty			.equ 0
 TBC_LOC				.equ 0
+#else
+#ifdef CPM								; CP/M 2.x
+TBC_LOC				.equ 0100h
 #else									; RomWBW
 #include			"std.asm"
 #endif
+#endif
+
 				.org TBC_LOC
 start:
-				ld sp,stack				; ** Cold Start **
+				ld hl,(stack)				; ** Cold Start **
+				ld sp,hl
+				ld de,stacksize
+				sbc hl,de
+				ld (stacklimit),hl
 				ld a,0ffh
 				jp init
 testc:
@@ -322,7 +330,7 @@ xp16:
 				ret
 xp17:
 				pop hl					; not rel.op
-				ret						; return hl=<expr2>
+				ret					; return hl=<expr2>
 xp18:
 				ld a,c					; routine for all rel.ops
 				pop hl
@@ -577,7 +585,7 @@ changesign:
 				ld a,h					; ** ChangeSign **
 				or l					; check if hl is zero
 				jp nz,cs1				; no, try to change sign
-				ret						; yes, return
+				ret					; yes, return
 cs1:
 				ld a,h					; change sign of hl
 				push af
@@ -835,7 +843,7 @@ ps1:
 				call outc				; no, show character
 				cp cr					; was it a cr?
 				jr nz,ps1				; no, next character
-				ret						; yes, returns
+				ret					; yes, returns
 qtstg:
 				call testc				; ** Qtstg **
 				.db 22h					; is it a double quote
@@ -867,7 +875,7 @@ qt4:
 				pop hl					; return address
 				jr qt2
 qt5:
-				ret						; none of the above
+				ret					; none of the above
 
 printnum:
 				ld b,0h					; ** PrintNum **
@@ -1007,7 +1015,7 @@ pp1:
 				push bc					; bc = return address
 				ret
 pusha:
-				ld hl,stacklimit			; ** PushA **
+				ld hl,(stacklimit)			; ** PushA **
 				call changesign
 				pop bc					; bc = return address
 				add hl,sp				; is stack near the top?
@@ -1139,7 +1147,7 @@ sorry				.db "SORRY",cr
 ; (SEE NEXT SECTION). "CURRNT" SHOULD POINT TO A 0.
 ;*************************************************************
 rstart:
-				ld sp,stack
+				ld sp,(stack)
 st1:
 				call crlf
 				sub a					; a=0
@@ -1246,14 +1254,6 @@ st4:
 ; 'GOTO EXPR(CR)' EVALUATES THE EXPRESSION, FIND THE TARGET
 ; LINE, AND JUMP TO 'RUNTSL' TO DO IT.
 ;*************************************************************
-#ifndef ZEMU
-bye:
-				call endchk				; ** Reboot **
-				ld a,bid_boot				; boot bank
-				ld hl,0			 		; address zero
-				call hb_bnkcall				; does not return
-				halt
-#endif
 new:
 				call endchk				; ** New **
 				ld hl,textbegin
@@ -1332,7 +1332,7 @@ ls1:
 print:
 				ld c,6					; c = number of spaces
 				call testc				; is it a semicolon?
-				.db ':'
+				.db ';'
 				.db pr2-$-1
 				call crlf
 				jr runsml
@@ -1374,7 +1374,7 @@ pr9:
 				jp pr3
 pr4:
 				call qtstg				; is it a string?
-				jr pr8
+				jp pr8
 pr3:
 				call testc				; is it a comma?
 				.db ','
@@ -1609,14 +1609,32 @@ init:
 				call printstr
 				jp rstart
 
+
+;*************************************************************
+
+#ifdef ZEMU
+#include			"src/zemuio.asm"
+#endif
+
+#ifdef ROMWBW
+#include			"src/romwbwio.asm"
+#endif
+
+#ifdef CPM
+#include			"src/cpmio.asm"
+#endif
+
+;*************************************************************
 chkio:
 				call haschar				; check if character available
 				ret z					; no, return
+#ifndef CPM
 				call getchar				; get the character
+#endif
 				push bc					; is it a lf?
 				ld b,a
 				sub lf
-				jr z,io1				; yes, ignore an return
+				jr z,io1				; yes, ignore a return
 				ld a,b					; no, restore a and bc
 				pop bc
 				cp ctrlo				; is it ctrl-o?
@@ -1656,70 +1674,6 @@ oc1:
 				call outc
 				ld a,cr					; restore register
 				ret					; and return
-putchar:
-#ifdef ZEMU
-				call uart_tx_ready			; see if transmit is available
-				out (tty_data),a			; and send it
-				ret
-uart_tx_ready:
-				push af
-uart_tx_ready_loop:
-				in a,(tty_status)
-				bit tx_empty,a
-				jp z,uart_tx_ready_loop
-				pop af
-#else
-				push af
-				push bc
-				push de
-				push hl
-									; output character to console via hbios
-				ld e,a					; output char to e
-				ld c,ciodev_console			; console unit to c
-				ld b,bf_cioout				; hbios func: output char
-				rst 08					; hbios outputs character
-				pop hl
-				pop de
-				pop bc
-				pop af
-#endif
-				ret
-haschar:
-#ifdef ZEMU
-				in a,(tty_status)			; check if character available
-				bit rx_full,a
-#else
-				push bc
-				push de
-				push hl
-									; get console input status via hbios
-				ld c,ciodev_console			; console unit to c
-				ld b,bf_cioist				; hbios func: input status
-				rst 08					; hbios returns status in a
-				pop hl
-				pop de
-				pop bc
-#endif
-				ret
-
-getchar:
-#ifdef ZEMU
-				in a,(tty_data)				; get the character
-#else
-				push bc
-				push de
-				push hl
-									; input character from console via hbios
-				ld c,ciodev_console			; console unit to c
-				ld b,bf_cioin				; hbios func: input char
-				rst 08					; hbios reads charactdr
-				ld a,e					; move character to a for return
-									; restore registers (af is output)
-				pop hl
-				pop de
-				pop bc
-#endif
-				ret
 
 ;*************************************************************
 ;
@@ -1860,13 +1814,14 @@ ex5:
 				jp (hl)
 
 ;-------------------------------------------------------------------------------
+
 LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
-				.org (TBC_LOC + 09feh)
+				.org TBC_LOC + USRPTR_OFFSET
 usrptr:				.ds 2					; -> user defined function area
-				.org (TBC_LOC + 0a00h)
+				.org TBC_LOC + USRFUNC_OFFSET
 usrfunc				.ds 2					; start of user defined function area
-				.org (TBC_LOC + 0c00h)			; start of state
+				.org TBC_LOC + INTERNAL_OFFSET		; start of state
 ocsw				.ds 1					; output control switch
 current				.ds 2					; points to current line
 stkgos				.ds 2					; saves sp in 'GOSUB'
@@ -1880,18 +1835,17 @@ loopptr				.ds 2					; loop text pointer
 rndptr				.ds 2					; random number pointer
 textunfilled			.ds 2					; -> unfilled text area
 textbegin			.ds 2					; start of text save area
-				.org (TBC_LOC + 07dffh)
+				.org TBC_LOC + TEXTEND_OFFSET
 textend				.ds 0					; end of text area
 varbegin			.ds 55					; variable @(0)
 varend				.ds 0					; end of variable area
 buffer				.ds 72					; input buffer
 bufend				.ds 1
-stacklimit			.ds 1
-				.org (TBC_LOC + 07fffh)
-stack				.equ $
+stacklimit			.dw 0
+stack				.dw TBC_LOC + STACK_OFFSET
 
-#ifndef ZEMU
-slack				.equ (tbc_end - lst_rom)
+#ifdef ROMWBW
+slack				.equ (TBC_END - LST_ROM)
 				.fill slack,'t'
 
 				.echo "TASTYBASIC space remaining: "

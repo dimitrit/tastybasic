@@ -98,7 +98,7 @@ finish:
 
 ;*************************************************************
 ;
-; *** REM *** IF *** INPUT *** & LET (& DEFLT) ***
+; ** REM ** IF ** INPUT ** & LET (& DEFLT) ** DATA ** READ **
 ;
 ; 'REM' CAN BE FOLLOWED BY ANYTHING AND IS IGNORED BY TBI.
 ; TBI TREATS IT LIKE AN 'IF' WITH A FALSE CONDITION.
@@ -131,9 +131,15 @@ finish:
 ; TBI EVALUATES THE EXPR. AND SET THE VARIABLE TO THAT VALUE.
 ; TBI WILL ALSO HANDLE 'LET' COMMAND WITHOUT THE WORD 'LET'.
 ; THIS IS DONE BY 'DEFLT'.
+;
+; 'DATA' ALLOWS CONSTANT VALUES TO BE STORED IN CODE. TREATED
+; AS A REMARK ('REM') WHEN PROGRAM IS EXECUTED.
+;
+; 'READ' ASSIGNS THE NEXT AVAILABLE DATA VALUE TO A VARIABLE.
 ;*************************************************************
 rem:
-				ld hl,0000h				; ** Rem **
+data:
+				ld hl,0					; ** Rem ** Data **
 				jr if1					; this is like 'IF 0'
 iff:
 				call expr				; ** If **
@@ -178,7 +184,7 @@ ip3:
 				push hl
 				ld hl,input
 				ld (current),hl
-				ld hl,0000h
+				ld hl,0
 				add hl,sp
 				ld (stkinp),hl
 				push de
@@ -217,6 +223,79 @@ let:
 				jr let					; item by item
 lt1:
 				call finish
+read:
+				push de					; ** Read **
+				ld hl,(readptr)				; has read pointer been initialised?
+				ld a,h
+				or a
+				jr nz,rd1				; yes, find next data value
+				call findline				; no, find first line
+				jr nc,rd4				; found first line
+				pop de					; nothing found, so how?
+				jp qhow
+rd1:
+				ex de,hl
+				call skipspace				; skip over spaces
+				call testc				; have we hit a comma?
+				.db ','
+				.db rd4-$-1				
+				jr rd3
+rd4:
+				call nextdata
+				jr z,rd3				; found a data statement
+				pop de
+				jp qhow					; nothing found, so how to read?
+				
+rd3:				
+				ld (readptr),de				; update read pointer
+				pop de
+				call testvar				
+				jp c,qwhat				; no variable
+				push hl					; save address of var
+				push de					; and text pointer
+				ld de,(readptr)				; point to next data value
+				call skipspace
+				call expr				; evaluate expression
+				ld (readptr),de				; update read pointer
+				pop de					; and restore text pointer
+				ld b,h					; value is in bc now
+				ld c,l
+				pop hl					; get address
+				ld (hl),c				; save value
+				inc hl
+				ld (hl),b
+				
+				call testc				; any other variables?
+				.db ','
+				.db rd2-$-1
+				jr read					; yes, read next
+rd2:
+				call finish				; all done
+finddata:
+				inc de					; skip over line no.
+				inc de
+				call skipspace
+				ld hl,datastmt
+				ld b,4
+fd1:
+				ld a,(de)				
+				cp (hl)
+				jp nz,nextdata				; not what we're looking for
+				dec b					; are we done comparing
+				jr z,fd2				; yes
+				inc de
+				inc hl
+				jr fd1
+
+nextdata:
+				ld hl,0
+				call findskip				; find the next line
+				jr nc,finddata				; and try there
+				or 1					; no more lines
+				ret					; nc,nz: not found!
+fd2:
+				inc de                                  ; first char past statement
+				ret					; nc,z:found; nc,nz:no
 
 ;*************************************************************
 ;
@@ -375,14 +454,14 @@ xp18:
 				ex (sp),hl				; first <expr2> in hl
 				call ckhlde				; compare them
 				pop de					; restore text pointer
-				ld hl,0000h				; set hl=0, a=1
+				ld hl,0					; set hl=0, a=1
 				ld a,1
 				ret
 expr2:
 				call testc				; is it minus sign?
 				.db '-'
 				.db xp21-$-1
-				ld hl,0000h				; yes, fake 0 -
+				ld hl,0					; yes, fake 0 -
 				jr xp26					; treat like subtract
 xp21:
 				call testc				; is it plus sign?
@@ -440,7 +519,7 @@ xp31:
 				jp nz,ahow
 xp32:
 				ld a,l
-				ld hl,0000h
+				ld hl,0
 				or a
 				jr z,xp35
 xp33:
@@ -1103,7 +1182,7 @@ tv1:
 				ret
 
 testnum:
-				ld hl,0000h				; ** TestNum **
+				ld hl,0					; ** TestNum **
 				ld b,h					; test if the text is a number
 				call skipspace
 tn1:
@@ -1188,7 +1267,7 @@ st1:
 				ld hl,st2 + 1				; literal zero
 				ld (current),hl				; reset current line pointer
 st2:
-				ld hl,0000h
+				ld hl,0
 				ld (loopvar),hl
 				ld (stkgos),hl
 st3:
@@ -1298,6 +1377,8 @@ endd:
 				jp rstart
 run:
 				call endchk				; ** Run **
+				ld a,0
+				ld (readptr),a
 				ld de,textbegin
 runnxl:
 				ld hl,0h				; ** Run Next Line **
@@ -1452,7 +1533,7 @@ gosub:
 				push hl
 				ld hl,(stkgos)				; and 'stkgos'
 				push hl
-				ld hl,0000h				; and load new ones
+				ld hl,0					; and load new ones
 				ld (loopvar),hl
 				add hl,sp
 				ld (stkgos),hl
@@ -1549,11 +1630,11 @@ fr7:
 				cp e
 				jr nz,fr7
 				ex de,hl
-				ld hl,0000h
+				ld hl,0
 				add hl,sp
 				ld b,h
 				ld c,l
-				ld hl,000ah
+				ld hl,0ah
 				add hl,de
 				call mvdown
 				ld sp,hl
@@ -1771,6 +1852,11 @@ tab2:									; direct/statements
 				dwa(poke)
 				.db "OUT"
 				dwa(outp)
+datastmt:
+				.db "DATA"
+				dwa(data)
+				.db "READ"
+				dwa(read)
 				.db "END"
 				dwa(endd)
 				dwa(deflt)
@@ -1869,6 +1955,7 @@ looplmt				.ds 2					; loop limit
 loopln				.ds 2					; loop line number
 loopptr				.ds 2					; loop text pointer
 rndptr				.ds 2					; random number pointer
+readptr				.ds 2					; read pointer
 textunfilled			.ds 2					; -> unfilled text area
 textbegin			.ds 2					; start of text save area
 				.org TBC_LOC + TEXTEND_OFFSET

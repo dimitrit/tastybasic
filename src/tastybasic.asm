@@ -223,6 +223,12 @@ let:
 				jr let					; item by item
 lt1:
 				call finish
+restore:			call rstreadptr
+				call finish
+rstreadptr:
+				ld a,0
+				ld (readptr),a
+				ret
 read:
 				push de					; ** Read **
 				ld hl,(readptr)				; has read pointer been initialised?
@@ -1377,8 +1383,7 @@ endd:
 				jp rstart
 run:
 				call endchk				; ** Run **
-				ld a,0
-				ld (readptr),a
+				call rstreadptr
 				ld de,textbegin
 runnxl:
 				ld hl,0h				; ** Run Next Line **
@@ -1857,6 +1862,8 @@ datastmt:
 				dwa(data)
 				.db "READ"
 				dwa(read)
+				.db "RESTORE"
+				dwa(restore)
 				.db "END"
 				dwa(endd)
 				dwa(deflt)

@@ -226,33 +226,37 @@ lt1:
 restore:			call rstreadptr
 				call finish
 rstreadptr:
-				ld a,0
-				ld (readptr),a
+				ld hl,0
+				ld (readptr),hl
 				ret
 read:
 				push de					; ** Read **
 				ld hl,(readptr)				; has read pointer been initialised?
 				ld a,h
 				or a
-				jr nz,rd1				; yes, find next data value
+				jr nz,rd2				; yes, find next data value
 				call findline				; no, find first line
-				jr nc,rd4				; found first line
+				jr nc,rd1				; found first line
 				pop de					; nothing found, so how?
 				jp qhow
 rd1:
+				call finddata
+				jr rd4
+rd2:
 				ex de,hl
 				call skipspace				; skip over spaces
 				call testc				; have we hit a comma?
 				.db ','
-				.db rd4-$-1				
-				jr rd3
-rd4:
+				.db rd3-$-1				
+				jr rd5
+rd3:
 				call nextdata
-				jr z,rd3				; found a data statement
+rd4:
+				jr z,rd5				; found a data statement
 				pop de
 				jp qhow					; nothing found, so how to read?
 				
-rd3:				
+rd5:				
 				ld (readptr),de				; update read pointer
 				pop de
 				call testvar				
@@ -273,9 +277,9 @@ rd3:
 				
 				call testc				; any other variables?
 				.db ','
-				.db rd2-$-1
+				.db rd6-$-1
 				jr read					; yes, read next
-rd2:
+rd6:
 				call finish				; all done
 finddata:
 				inc de					; skip over line no.
@@ -1707,12 +1711,6 @@ nx2:
 init:
 				ld hl,start				; initialise random pointer
 				ld (rndptr),hl
-				ld hl,usrfunc				; initialise user defined function
-				ld (usrptr),hl
-				ld a,0c3h
-				ld (usrfunc),a				; initiase default USR() behaviour
-				ld hl,qhow				; (i.e. HOW? error)
-				ld (usrfunc+1),hl
 				ld hl,textbegin				; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
@@ -1947,9 +1945,9 @@ ex5:
 LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
 				.org TBC_LOC + USRPTR_OFFSET
-usrptr:				.ds 2					; -> user defined function area
+usrptr				.dw usrfunc				; -> user defined function area
 				.org TBC_LOC + USRFUNC_OFFSET
-usrfunc				.ds 2					; start of user defined function area
+usrfunc				jp qhow					; start of user defined function area
 				.org TBC_LOC + INTERNAL_OFFSET		; start of state
 ocsw				.ds 1					; output control switch
 current				.ds 2					; points to current line

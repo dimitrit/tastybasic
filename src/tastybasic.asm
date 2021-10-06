@@ -296,6 +296,9 @@ fd1:
 				inc de
 				inc hl
 				jr fd1
+fd2:
+				inc de                                  ; first char past statement
+				ret					; nc,z:found; nc,nz:no
 
 nextdata:
 				ld hl,0
@@ -303,9 +306,6 @@ nextdata:
 				jr nc,finddata				; and try there
 				or 1					; no more lines
 				ret					; nc,nz: not found!
-fd2:
-				inc de                                  ; first char past statement
-				ret					; nc,z:found; nc,nz:no
 
 ;*************************************************************
 ;

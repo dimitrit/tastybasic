@@ -36,7 +36,7 @@
 	LD D,0
 	RET
 COUNT:
-	CP 0
+	OR A
 	RET Z
 	BIT 0,A
 	JR Z,NEXT

@@ -52,34 +52,34 @@ contain the result on return.
 ### Example
 The following example shows the bit summation for a given value:
 
-```
-0B00                     .ORG $0B00    ; ie. 2816 decimal
-0B00
-0B00 06 00               LD B,0
-0B02 7A                  LD A,D
-0B03 CD 0E 0B            CALL COUNT
-0B06 7B                  LD A,E
-0B07 CD 0E 0B            CALL COUNT
-0B0A 58                  LD E,B
-0B0B 16 00               LD D,0
-0B0D C9                  RET
+```	
+0B00             	.ORG $0B00	; ie. 2816 dec
+0B00    
+0B00 06 00       	LD B,0
+0B02 7A          	LD A,D
+0B03 CD 0E 0B    	CALL COUNT
+0B06 7B          	LD A,E
+0B07 CD 0E 0B    	CALL COUNT
+0B0A 58          	LD E,B
+0B0B 16 00       	LD D,0
+0B0D C9          	RET
 0B0E             COUNT:
-0B0E FE 00               CP 0
-0B10 C8                  RET Z
-0B11 CB 47               BIT 0,A
-0B13 28 01               JR Z,NEXT
-0B15 04                  INC B
-0B16             NEXT:
-0B16 CB 3F               SRL A
-0B18 18 F4               JR COUNT
-0B1A
-0B1A                     .END
+0B0E B7          	OR A
+0B0F C8          	RET Z
+0B10 CB 47       	BIT 0,A
+0B12 28 01       	JR Z,NEXT
+0B14 04          	INC B
+0B15             NEXT:
+0B15 CB 3F       	SRL A
+0B17 18 F5       	JR COUNT
+0B19             
+0B19             	.END
 ```
 
 ```
 10 REM -- CP/M VERSION
 20 REM -- SEE EXAMPLES DIRECTORY FOR OTHER PLATFORMS
-30 FOR I=0 TO 25
+30 FOR I=0 TO 24
 40 READ A
 50 POKE 2816+I,A
 60 NEXT I
@@ -88,7 +88,7 @@ The following example shows the bit summation for a given value:
 90 PRINT "THE BIT SUMMATION OF ",#5,P," IS ",#2,Q
 100 GOTO 70
 110 DATA 6,0,122,205,14,11,123,205,14,11,88,22,0,201
-120 DATA 254,0,200,203,71,40,1,4,203,63,24,244
+120 DATA 183,200,203,71,40,1,4,203,63,24,245
 ```
 
 Note that the example above is CP/M specific. Examples for other platforms can be found in the

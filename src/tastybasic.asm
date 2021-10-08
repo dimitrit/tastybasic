@@ -1192,17 +1192,27 @@ tv1:
 				ret
 
 testnum:
-				ld hl,0					; ** TestNum **
-				ld b,h					; test if the text is a number
+				call parsenum				; ** TestNum **
+				ret nc					; if not a number, return nc and 0 in b and hl
+				jr qhow					; carry set, so overflowed
+parsenum:
+				ld hl,0					; try to parse text as a number
+				ld b,h					; if not a number, return 0 in b and hl
 				call skipspace
 tn1:
-				cp '0'					; if not,return 0 in b and hl
-				ret c
+				cp '0'
+				jr nc,tn2
+				ccf					; reset carry
+				ret
+tn2:
 				cp ':'					; if a digit, convert to binary in
 				ret nc					; b and hl
 				ld a,0f0h				; set b to number of digits
 				and h					; if h>255, there is no room for
-				jr nz,qhow				; next digit
+				jr z,tn3				; next digit, so set carry
+				scf
+				ret
+tn3:
 				inc b					; b counts number of digits
 				push bc
 				ld b,h					; hl=10*hl+(new digit)
@@ -1222,6 +1232,8 @@ tn1:
 				pop bc
 				ld a,(de)
 				jp p,tn1
+				scf
+				ret
 qhow:
 				push de					; ** Error How? **
 ahow:

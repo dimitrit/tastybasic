@@ -22,9 +22,11 @@ Tasty Basic provides two statements to write to memory and I/O ports:
 
 Additionally there are statements to define and read constant values:
 
-`DATA m[,n[,...]]` Used to store constant values in the program code. Each DATA statement can define one or more constants separated by commas.
+`DATA m[,n[,...]]` Used to store constant values in the program code. Each DATA statement can define one or more numeric constants separated by commas. `DATA` statements may appear anywhere in the program.
 
-`READ m` Reads the next available data value and assigns it to variable _m_, starting with the left most value in the first `DATA` statement.
+`READ m` Reads the next available data value and assigns it to variable _m_, starting with the first item in the first `DATA` statement.
+
+`RESTORE` Resets the `READ` pointer to the first item of the data list, allowing `DATA` values to be re-read.
 
 ### Functions
 Tasty Basic provides the following functions to read from and write to memory locations and I/O ports:

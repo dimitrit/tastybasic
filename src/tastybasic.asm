@@ -261,25 +261,28 @@ rd5:
 				pop de
 				call testvar				
 				jp c,qwhat				; no variable
-				push hl					; save address of var
+				push hl					; save address of variable
 				push de					; and text pointer
 				ld de,(readptr)				; point to next data value
-				call skipspace
-				call expr				; evaluate expression
+				call parsenum				; parse the constant
+				jr nc, rd6
+				pop de					; spmething bad happened when
+				jp qhow					; parsing the number
+rd6:
 				ld (readptr),de				; update read pointer
 				pop de					; and restore text pointer
-				ld b,h					; value is in bc now
+				ld b,h					; move value to bc
 				ld c,l
-				pop hl					; get address
-				ld (hl),c				; save value
+				pop hl					; get address of variable
+				ld (hl),c				; assign value
 				inc hl
 				ld (hl),b
 				
-				call testc				; any other variables?
+				call testc				; do we have more variables?
 				.db ','
-				.db rd6-$-1
+				.db rd7-$-1
 				jr read					; yes, read next
-rd6:
+rd7:
 				call finish				; all done
 finddata:
 				inc de					; skip over line no.

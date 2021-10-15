@@ -34,14 +34,19 @@ ctrlu				.equ 15h
 stacksize			.equ 0100h
 bufsize				.equ 48h
 
-#ifdef ZEMU								; Z80 Emulator
-TBC_LOC				.equ 0
-#else
-#ifdef CPM								; CP/M 2.x
+#ifdef CPM
+#define PLATFORM CPM
 TBC_LOC				.equ 0100h
-#else									; RomWBW
-#include			"std.asm"
 #endif
+
+#ifdef ROMWBW
+#define PLATFORM ROMWBW
+TBC_LOC				.equ 0a00h
+		
+#endif
+
+#ifndef PLATFORM
+TBC_LOC				.equ 0
 #endif
 
 				.org TBC_LOC
@@ -1744,15 +1749,15 @@ init:
 ;*************************************************************
 
 #ifdef ZEMU
-#include			"src/zemuio.asm"
+#include			"zemuio.asm"
 #endif
 
 #ifdef ROMWBW
-#include			"src/romwbwio.asm"
+#include			"romwbwio.asm"
 #endif
 
 #ifdef CPM
-#include			"src/cpmio.asm"
+#include			"cpmio.asm"
 #endif
 
 ;*************************************************************

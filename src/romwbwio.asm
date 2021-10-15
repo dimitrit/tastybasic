@@ -39,7 +39,7 @@ BF_SYSRES_WARM			.equ 01h			; warm start
 ;
 TBC_LOC				.equ $0a00
 
-TBC_SIZ				.equ $0900
+TBC_SIZ				.equ $0a00
 TBC_END				.equ TBC_LOC + TBC_SIZ
 ;
 ;*************************************************************

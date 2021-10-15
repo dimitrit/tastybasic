@@ -1,3 +1,5 @@
+UNAME := $(shell uname)
+BINDIR := ../../../Tools/$(UNAME)
 APPS := ../../../Binary/Apps
 
 ROMIMAGE := tastybasic.bin
@@ -5,6 +7,8 @@ ROMDEPS := tastybasic.asm romwbwio.asm
 CPMIMAGE := tastybasic.com
 CPMDEPS := tastybasic.asm cpmio.asm
 CPMAPP := $(APPS)/tbasic.com
+
+export PATH := $(BINDIR):${PATH}
 
 all: $(ROMIMAGE) $(CPMAPP)
 

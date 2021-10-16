@@ -6,6 +6,7 @@ ROMIMAGE := tastybasic.bin
 ROMDEPS := tastybasic.asm romwbwio.asm
 CPMIMAGE := tastybasic.com
 CPMDEPS := tastybasic.asm cpmio.asm
+CPMAPP := $(APPDIR)/tbasic.com
 
 export PATH := $(BINDIR):${PATH}
 
@@ -21,6 +22,6 @@ $(CPMIMAGE): $(CPMDEPS)
 	@uz80as -dCPM tastybasic.asm tastybasic.com tastybasic.com.lst
 
 $(APPDIR): $(CPMIMAGE)
-	@cat $(CPMIMAGE) > $(APPDIR)/tbasic.com
+	@cat $(CPMIMAGE) > $(CPMAPP)
 
 .PHONY: clean $(APPDIR)

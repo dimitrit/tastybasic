@@ -1,16 +1,15 @@
 UNAME := $(shell uname)
+APPDIR := $(wildcard ../../../Binary/Apps)
 BINDIR := ../../../Tools/$(UNAME)
-APPS := ../../../Binary/Apps
 
 ROMIMAGE := tastybasic.bin
 ROMDEPS := tastybasic.asm romwbwio.asm
 CPMIMAGE := tastybasic.com
 CPMDEPS := tastybasic.asm cpmio.asm
-CPMAPP := $(APPS)/tbasic.com
 
 export PATH := $(BINDIR):${PATH}
 
-all: $(ROMIMAGE) $(CPMAPP)
+all: $(ROMIMAGE) $(CPMIMAGE) | $(APPDIR)
 
 clean:
 	@rm -f *.lst *.img *.com *.bin $(CPMAPP)
@@ -21,7 +20,7 @@ $(ROMIMAGE): $(ROMDEPS)
 $(CPMIMAGE): $(CPMDEPS)
 	@uz80as -dCPM tastybasic.asm tastybasic.com tastybasic.com.lst
 
-$(CPMAPP): $(CPMIMAGE)
-	@cat $(CPMIMAGE) > $(CPMAPP)
+$(APPDIR): $(CPMIMAGE)
+	@cat $(CPMIMAGE) > $(APPDIR)/tbasic.com
 
-.PHONY: clean
+.PHONY: clean $(APPDIR)

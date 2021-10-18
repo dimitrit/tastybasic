@@ -22,7 +22,6 @@
 ; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
-HBIOS				.equ 08h
 CIODEV_CONSOLE			.equ 0d0h
 BF_CIOIN			.equ 00h 			; character input
 BF_CIOOUT			.equ 01h			; character output
@@ -37,8 +36,9 @@ BF_SYSRES_WARM			.equ 01h			; warm start
 ;
 ;*************************************************************
 ;
+#ifndef PLATFORM
 TBC_LOC				.equ $0a00
-
+#endif
 TBC_SIZ				.equ $0a00
 TBC_END				.equ TBC_LOC + TBC_SIZ
 ;
@@ -64,7 +64,7 @@ putchar:
 				ld e,a				; output char to e
 				ld c,CIODEV_CONSOLE		; console unit to c
 				ld b,BF_CIOOUT			; hbios func: output char
-				rst HBIOS			; hbios outputs character
+				rst 08h				; hbios outputs character
 
 				pop hl
 				pop de
@@ -78,7 +78,7 @@ haschar:
 								; get console input status via hbios
 				ld c,CIODEV_CONSOLE		; console unit to c
 				ld b,BF_CIOIST			; hbios func: input status
-				rst HBIOS			; hbios returns status in a
+				rst 08h				; hbios returns status in a
 
 				pop hl
 				pop de
@@ -92,7 +92,7 @@ getchar:
 								; input character from console via hbios
 				ld c,CIODEV_CONSOLE		; console unit to c
 				ld b,BF_CIOIN			; hbios func: input char
-				rst HBIOS			; hbios reads charactdr
+				rst 08h				; hbios reads charactdr
 				ld a,e				; move character to a for return
 								; restore registers (af is output)
 				pop hl

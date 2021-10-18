@@ -34,14 +34,19 @@ ctrlu				.equ 15h
 stacksize			.equ 0100h
 bufsize				.equ 48h
 
-#ifdef ZEMU								; Z80 Emulator
-TBC_LOC				.equ 0
-#else
-#ifdef CPM								; CP/M 2.x
+#ifdef CPM
+#define PLATFORM CPM
 TBC_LOC				.equ 0100h
-#else									; RomWBW
-#include			"std.asm"
 #endif
+
+#ifdef ROMWBW
+#define PLATFORM ROMWBW
+TBC_LOC				.equ 0a00h
+		
+#endif
+
+#ifndef PLATFORM
+TBC_LOC				.equ 0
 #endif
 
 				.org TBC_LOC
@@ -98,7 +103,7 @@ finish:
 
 ;*************************************************************
 ;
-; *** REM *** IF *** INPUT *** & LET (& DEFLT) ***
+; ** REM ** IF ** INPUT ** & LET (& DEFLT) ** DATA ** READ **
 ;
 ; 'REM' CAN BE FOLLOWED BY ANYTHING AND IS IGNORED BY TBI.
 ; TBI TREATS IT LIKE AN 'IF' WITH A FALSE CONDITION.
@@ -131,9 +136,15 @@ finish:
 ; TBI EVALUATES THE EXPR. AND SET THE VARIABLE TO THAT VALUE.
 ; TBI WILL ALSO HANDLE 'LET' COMMAND WITHOUT THE WORD 'LET'.
 ; THIS IS DONE BY 'DEFLT'.
+;
+; 'DATA' ALLOWS CONSTANT VALUES TO BE STORED IN CODE. TREATED
+; AS A REMARK ('REM') WHEN PROGRAM IS EXECUTED.
+;
+; 'READ' ASSIGNS THE NEXT AVAILABLE DATA VALUE TO A VARIABLE.
 ;*************************************************************
 rem:
-				ld hl,0000h				; ** Rem **
+data:
+				ld hl,0					; ** Rem ** Data **
 				jr if1					; this is like 'IF 0'
 iff:
 				call expr				; ** If **
@@ -178,7 +189,7 @@ ip3:
 				push hl
 				ld hl,input
 				ld (current),hl
-				ld hl,0000h
+				ld hl,0
 				add hl,sp
 				ld (stkinp),hl
 				push de
@@ -217,6 +228,92 @@ let:
 				jr let					; item by item
 lt1:
 				call finish
+restore:			call rstreadptr
+				call finish
+rstreadptr:
+				ld hl,0
+				ld (readptr),hl
+				ret
+read:
+				push de					; ** Read **
+				ld hl,(readptr)				; has read pointer been initialised?
+				ld a,h
+				or a
+				jr nz,rd2				; yes, find next data value
+				call findline				; no, find first line
+				jr nc,rd1				; found first line
+				pop de					; nothing found, so how?
+				jp qhow
+rd1:
+				call finddata
+				jr rd4
+rd2:
+				ex de,hl
+				call skipspace				; skip over spaces
+				call testc				; have we hit a comma?
+				.db ','
+				.db rd3-$-1				
+				jr rd5
+rd3:
+				call nextdata
+rd4:
+				jr z,rd5				; found a data statement
+				pop de
+				jp qhow					; nothing found, so how to read?
+				
+rd5:				
+				ld (readptr),de				; update read pointer
+				pop de
+				call testvar				
+				jp c,qwhat				; no variable
+				push hl					; save address of variable
+				push de					; and text pointer
+				ld de,(readptr)				; point to next data value
+				call parsenum				; parse the constant
+				jr nc, rd6
+				pop de					; spmething bad happened when
+				jp qhow					; parsing the number
+rd6:
+				ld (readptr),de				; update read pointer
+				pop de					; and restore text pointer
+				ld b,h					; move value to bc
+				ld c,l
+				pop hl					; get address of variable
+				ld (hl),c				; assign value
+				inc hl
+				ld (hl),b
+				
+				call testc				; do we have more variables?
+				.db ','
+				.db rd7-$-1
+				jr read					; yes, read next
+rd7:
+				call finish				; all done
+finddata:
+				inc de					; skip over line no.
+				inc de
+				call skipspace
+				ld hl,datastmt
+				ld b,4
+fd1:
+				ld a,(de)				
+				cp (hl)
+				jp nz,nextdata				; not what we're looking for
+				dec b					; are we done comparing
+				jr z,fd2				; yes
+				inc de
+				inc hl
+				jr fd1
+fd2:
+				inc de                                  ; first char past statement
+				ret					; nc,z:found; nc,nz:no
+
+nextdata:
+				ld hl,0
+				call findskip				; find the next line
+				jr nc,finddata				; and try there
+				or 1					; no more lines
+				ret					; nc,nz: not found!
 
 ;*************************************************************
 ;
@@ -224,8 +321,10 @@ lt1:
 ;
 ; 'PEEK(<EXPR>)' RETURNS THE VALUE OF THE BYTE AT THE GIVEN
 ; ADDRESS.
-; 'POKE <expr1>,<expr1>' SETS BYTE AT ADDRESS <expr1> TO
+; 'POKE <expr1>,<expr2>' SETS BYTE AT ADDRESS <expr1> TO
 ; VALUE <expr2>
+; 'IN(<EXPR)' READS THE GIVEN PORT.
+; 'OUT <expr1>,<expr2>' WRITES VALUE <expr2> TO PORT <expr1>.
 ;
 ;*************************************************************
 peek:
@@ -233,9 +332,18 @@ peek:
 				ld a,h					; expression must be positive
 				or a
 				jp m,qhow
-				ld a,(hl)
+				ld a,(hl)				; peek address
 				ld h,0
 				ld l,a
+				ret
+inp:
+				call parn				; ** In(expr) **
+				ld a,0					; is port > 255?
+				cp h
+				jp nz,qhow				; yes, so not a valid port
+				ld c,l
+				in l,(c)				; read port
+				ld h,0
 				ret
 poke:
 				call expr				; ** Poke **
@@ -245,19 +353,40 @@ poke:
 				push hl
 				call testc				; is next char a comma?
 				.db ','
-				.db pk1-$-1				; what, no?
+				.db ot1-$-1				; what, no?
 				call expr				; get value to store
 				ld a,0					; is it > 255?
 				cp h
-				jp z,pk2				; no, all good
+				jp z,pk1				; no, all good
 				pop hl
-				jp m,qhow
-pk2:
+				jp qhow
+pk1:
 				ld a,l					; save value
 				pop hl
 				ld (hl),a
 				call finish
-pk1:
+outp:
+				call expr				; ** Out **
+				ld a,0					; is port > 255?
+				cp h
+				jp nz,qhow				; yes, so not a valid port
+				push hl
+				call testc				; is next char a comma?
+				.db ','
+				.db ot1-$-1				; what, no?
+				call expr				; get value to write
+				ld a,0					; is it > 255?
+				cp h
+				jp z,ot2				; no, all good
+				pop hl
+				jp qhow
+ot2:
+				ld a,l					; output value
+				pop hl
+				ld c,l
+				out (c),a
+				call finish
+ot1:
 				pop hl
 				jp qwhat
 usrexec:
@@ -343,14 +472,14 @@ xp18:
 				ex (sp),hl				; first <expr2> in hl
 				call ckhlde				; compare them
 				pop de					; restore text pointer
-				ld hl,0000h				; set hl=0, a=1
+				ld hl,0					; set hl=0, a=1
 				ld a,1
 				ret
 expr2:
 				call testc				; is it minus sign?
 				.db '-'
 				.db xp21-$-1
-				ld hl,0000h				; yes, fake 0 -
+				ld hl,0					; yes, fake 0 -
 				jr xp26					; treat like subtract
 xp21:
 				call testc				; is it plus sign?
@@ -408,7 +537,7 @@ xp31:
 				jp nz,ahow
 xp32:
 				ld a,l
-				ld hl,0000h
+				ld hl,0
 				or a
 				jr z,xp35
 xp33:
@@ -672,7 +801,7 @@ fi1:
 				pop af					; yes, purge return address
 				jp runnxl				; run next line
 fi2:
-				ret						; else return to caller
+				ret					; else return to caller
 endchk:
 				call skipspace				; ** EndChk **
 				cp cr					; ends with cr?
@@ -1071,17 +1200,27 @@ tv1:
 				ret
 
 testnum:
-				ld hl,0000h				; ** TestNum **
-				ld b,h					; test if the text is a number
+				call parsenum				; ** TestNum **
+				ret nc					; if not a number, return nc and 0 in b and hl
+				jr qhow					; carry set, so overflowed
+parsenum:
+				ld hl,0					; try to parse text as a number
+				ld b,h					; if not a number, return 0 in b and hl
 				call skipspace
 tn1:
-				cp '0'					; if not,return 0 in b and hl
-				ret c
+				cp '0'
+				jr nc,tn2
+				ccf					; reset carry
+				ret
+tn2:
 				cp ':'					; if a digit, convert to binary in
 				ret nc					; b and hl
 				ld a,0f0h				; set b to number of digits
 				and h					; if h>255, there is no room for
-				jr nz,qhow				; next digit
+				jr z,tn3				; next digit, so set carry
+				scf
+				ret
+tn3:
 				inc b					; b counts number of digits
 				push bc
 				ld b,h					; hl=10*hl+(new digit)
@@ -1101,6 +1240,8 @@ tn1:
 				pop bc
 				ld a,(de)
 				jp p,tn1
+				scf
+				ret
 qhow:
 				push de					; ** Error How? **
 ahow:
@@ -1156,7 +1297,7 @@ st1:
 				ld hl,st2 + 1				; literal zero
 				ld (current),hl				; reset current line pointer
 st2:
-				ld hl,0000h
+				ld hl,0
 				ld (loopvar),hl
 				ld (stkgos),hl
 st3:
@@ -1266,6 +1407,7 @@ endd:
 				jp rstart
 run:
 				call endchk				; ** Run **
+				call rstreadptr
 				ld de,textbegin
 runnxl:
 				ld hl,0h				; ** Run Next Line **
@@ -1420,7 +1562,7 @@ gosub:
 				push hl
 				ld hl,(stkgos)				; and 'stkgos'
 				push hl
-				ld hl,0000h				; and load new ones
+				ld hl,0					; and load new ones
 				ld (loopvar),hl
 				add hl,sp
 				ld (stkgos),hl
@@ -1517,11 +1659,11 @@ fr7:
 				cp e
 				jr nz,fr7
 				ex de,hl
-				ld hl,0000h
+				ld hl,0
 				add hl,sp
 				ld b,h
 				ld c,l
-				ld hl,000ah
+				ld hl,0ah
 				add hl,de
 				call mvdown
 				ld sp,hl
@@ -1589,12 +1731,6 @@ nx2:
 init:
 				ld hl,start				; initialise random pointer
 				ld (rndptr),hl
-				ld hl,usrfunc				; initialise user defined function
-				ld (usrptr),hl
-				ld a,0c3h
-				ld (usrfunc),a				; initiase default USR() behaviour
-				ld hl,qhow				; (i.e. HOW? error)
-				ld (usrfunc+1),hl
 				ld hl,textbegin				; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
@@ -1613,15 +1749,15 @@ init:
 ;*************************************************************
 
 #ifdef ZEMU
-#include			"src/zemuio.asm"
+#include			"zemuio.asm"
 #endif
 
 #ifdef ROMWBW
-#include			"src/romwbwio.asm"
+#include			"romwbwio.asm"
 #endif
 
 #ifdef CPM
-#include			"src/cpmio.asm"
+#include			"cpmio.asm"
 #endif
 
 ;*************************************************************
@@ -1737,12 +1873,23 @@ tab2:									; direct/statements
 				dwa(print)
 				.db "POKE"
 				dwa(poke)
+				.db "OUT"
+				dwa(outp)
+datastmt:
+				.db "DATA"
+				dwa(data)
+				.db "READ"
+				dwa(read)
+				.db "RESTORE"
+				dwa(restore)
 				.db "END"
 				dwa(endd)
 				dwa(deflt)
 tab4:									; functions
 				.db "PEEK"
 				dwa(peek)
+				.db "IN"
+				dwa(inp)
 				.db "RND"
 				dwa(rnd)
 				.db "ABS"
@@ -1818,9 +1965,9 @@ ex5:
 LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
 				.org TBC_LOC + USRPTR_OFFSET
-usrptr:				.ds 2					; -> user defined function area
+usrptr				.dw usrfunc				; -> user defined function area
 				.org TBC_LOC + USRFUNC_OFFSET
-usrfunc				.ds 2					; start of user defined function area
+usrfunc				jp qhow					; start of user defined function area
 				.org TBC_LOC + INTERNAL_OFFSET		; start of state
 ocsw				.ds 1					; output control switch
 current				.ds 2					; points to current line
@@ -1833,6 +1980,7 @@ looplmt				.ds 2					; loop limit
 loopln				.ds 2					; loop line number
 loopptr				.ds 2					; loop text pointer
 rndptr				.ds 2					; random number pointer
+readptr				.ds 2					; read pointer
 textunfilled			.ds 2					; -> unfilled text area
 textbegin			.ds 2					; start of text save area
 				.org TBC_LOC + TEXTEND_OFFSET

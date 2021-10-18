@@ -22,7 +22,28 @@
 ; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
-HBIOS				.equ 08h
+CIODEV_CONSOLE			.equ 0d0h
+BF_CIOIN			.equ 00h 			; character input
+BF_CIOOUT			.equ 01h			; character output
+BF_CIOIST			.equ 02h 			; character input status
+BF_SYSRESET			.equ 0f0h			; restart system
+BF_SYSRES_WARM			.equ 01h			; warm start
+
+;*************************************************************
+;
+; THE FOLLOWING NEED MUST BE SYNCED WITH STD.ASM SO ROMLDR
+; KNOWS WHERE THIS EXECUTES AT
+;
+;*************************************************************
+;
+#ifndef PLATFORM
+TBC_LOC				.equ $0a00
+#endif
+TBC_SIZ				.equ $0a00
+TBC_END				.equ TBC_LOC + TBC_SIZ
+;
+;*************************************************************
+
 USRPTR_OFFSET			.equ 09feh
 USRFUNC_OFFSET			.equ 0a00h
 INTERNAL_OFFSET			.equ 0c00h
@@ -30,21 +51,20 @@ TEXTEND_OFFSET			.equ 07dffh
 STACK_OFFSET			.equ 07fffh
 
 bye:
-				call endchk				; ** Reboot **
-				ld a,BID_BOOT				; boot bank
-				ld hl,0			 		; address zero
-				call HB_BNKCALL				; does not return
-				halt
+				call endchk			; ** Reboot **
+				ld b,BF_SYSRESET		; system restart
+				ld c,BF_SYSRES_WARM		; warm start
+				jp 0fff0h			; does not return!
 putchar:
 				push af
 				push bc
 				push de
 				push hl
-									; output character to console via hbios
-				ld e,a					; output char to e
-				ld c,CIODEV_CONSOLE			; console unit to c
-				ld b,BF_CIOOUT				; hbios func: output char
-				rst HBIOS				; hbios outputs character
+								; output character to console via hbios
+				ld e,a				; output char to e
+				ld c,CIODEV_CONSOLE		; console unit to c
+				ld b,BF_CIOOUT			; hbios func: output char
+				rst 08h				; hbios outputs character
 
 				pop hl
 				pop de
@@ -55,10 +75,10 @@ haschar:
 				push bc
 				push de
 				push hl
-									; get console input status via hbios
-				ld c,CIODEV_CONSOLE			; console unit to c
-				ld b,BF_CIOIST				; hbios func: input status
-				rst HBIOS				; hbios returns status in a
+								; get console input status via hbios
+				ld c,CIODEV_CONSOLE		; console unit to c
+				ld b,BF_CIOIST			; hbios func: input status
+				rst 08h				; hbios returns status in a
 
 				pop hl
 				pop de
@@ -69,12 +89,12 @@ getchar:
 				push bc
 				push de
 				push hl
-									; input character from console via hbios
-				ld c,CIODEV_CONSOLE			; console unit to c
-				ld b,BF_CIOIN				; hbios func: input char
-				rst HBIOS				; hbios reads charactdr
-				ld a,e					; move character to a for return
-									; restore registers (af is output)
+								; input character from console via hbios
+				ld c,CIODEV_CONSOLE		; console unit to c
+				ld b,BF_CIOIN			; hbios func: input char
+				rst 08h				; hbios reads charactdr
+				ld a,e				; move character to a for return
+								; restore registers (af is output)
 				pop hl
 				pop de
 				pop bc

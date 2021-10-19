@@ -1,5 +1,5 @@
 SUBDIRS := src
-TARGETS := all clean
+TARGETS := all clobber clean
 
 $(TARGETS): $(SUBDIRS)
 

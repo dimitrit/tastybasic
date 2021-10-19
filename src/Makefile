@@ -12,7 +12,7 @@ export PATH := $(BINDIR):${PATH}
 
 all: $(ROMIMAGE) $(CPMIMAGE) | $(APPDIR)
 
-clean:
+clean clobber:
 	@rm -f *.lst *.img *.com *.bin $(CPMAPP)
 
 $(ROMIMAGE): $(ROMDEPS)
@@ -24,4 +24,4 @@ $(CPMIMAGE): $(CPMDEPS)
 $(APPDIR): $(CPMIMAGE)
 	@cat $(CPMIMAGE) > $(CPMAPP)
 
-.PHONY: clean $(APPDIR)
+.PHONY: clean clobber $(APPDIR)

@@ -31,16 +31,13 @@ cr				.equ 0dh
 ctrlo				.equ 0fh
 ctrlu				.equ 15h
 
-stacksize			.equ 0100h
-bufsize				.equ 48h
-
 #ifdef CPM
-#define PLATFORM CPM
+#define PLATFORM "CP/M"
 TBC_LOC				.equ 0100h
 #endif
 
 #ifdef ROMWBW
-#define PLATFORM ROMWBW
+#define PLATFORM "ROMWBW"
 TBC_LOC				.equ 0a00h
 		
 #endif
@@ -51,11 +48,7 @@ TBC_LOC				.equ 0
 
 				.org TBC_LOC
 start:
-				ld hl,(stack)				; ** Cold Start **
-				ld sp,hl
-				ld de,stacksize
-				sbc hl,de
-				ld (stacklimit),hl
+				ld sp,stack				; ** Cold Start **
 				ld a,0ffh
 				jp init
 testc:
@@ -1248,8 +1241,16 @@ ahow:
 				ld de,how
 				jp handleerror
 
-msg1				.db "TASTY BASIC",cr
-msg2				.db " BYTES FREE",cr
+welcome				
+#ifdef PLATFORM
+				.db PLATFORM," "
+#endif
+				.db "TASTY BASIC"
+#ifdef VERSION
+				.db " (",VERSION,")"
+#endif
+				.db cr
+free				.db " BYTES FREE",cr
 how				.db "HOW?",cr
 ok				.db "OK",cr
 what				.db "WHAT?",cr
@@ -1736,12 +1737,12 @@ init:
 				ld (ocsw),a				; enable output control switch
 				call clrvars				; clear variables
 				call crlf
-				ld de,msg1				; output welcome message
+				ld de,welcome				; output welcome message
 				call printstr
 				call crlf
 				call size				; output free size message
 				call printnum
-				ld de,msg2
+				ld de,free
 				call printstr
 				jp rstart
 
@@ -1989,8 +1990,9 @@ varbegin			.ds 55					; variable @(0)
 varend				.ds 0					; end of variable area
 buffer				.ds 72					; input buffer
 bufend				.ds 1
-stacklimit			.dw 0
-stack				.dw TBC_LOC + STACK_OFFSET
+stacklimit			.ds 1
+				.org TBC_LOC + STACK_OFFSET
+stack				.equ $
 
 #ifdef ROMWBW
 slack				.equ (TBC_END - LST_ROM)

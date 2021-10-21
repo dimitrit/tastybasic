@@ -1,4 +1,5 @@
 UNAME := $(shell uname)
+VER := $(shell git describe --tags --abbrev=0)
 APPDIR := $(wildcard ../../../Binary/Apps)
 BINDIR := ../../../Tools/$(UNAME)
 
@@ -16,10 +17,10 @@ clean clobber:
 	@rm -f *.lst *.img *.com *.bin $(CPMAPP)
 
 $(ROMIMAGE): $(ROMDEPS)
-	@uz80as -dROMWBW tastybasic.asm tastybasic.bin tastybasic.bin.lst
+	@uz80as -dROMWBW -d"VERSION \"$(VER)\"" tastybasic.asm tastybasic.bin tastybasic.bin.lst
 
 $(CPMIMAGE): $(CPMDEPS)
-	@uz80as -dCPM tastybasic.asm tastybasic.com tastybasic.com.lst
+	@uz80as -dCPM -d"VERSION \"$(VER)\"" tastybasic.asm tastybasic.com tastybasic.com.lst
 
 $(APPDIR): $(CPMIMAGE)
 	@cat $(CPMIMAGE) > $(CPMAPP)

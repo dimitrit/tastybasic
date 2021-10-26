@@ -112,30 +112,36 @@ lo3:
 				jp rstart
 save:
 				call fname				; ** save **
-				call fdel				; remove any existing file
-				call fmake				; open file for writing
-				ld de,textbegin
+				ld de,textbegin				; check there is a program
+				ld hl,(textunfilled)			; in memory
+				sbc hl,de
+				jr nz,sa1				; yes, try to save it
+				jp qhow					; no, nothing to be done
 sa1:
+				call fdel				; remove any existing file
+				call fmake				; open new file for writing
+				ld de,textbegin				; initialise text ptr
+sa2:
 				push de					; save current text ptr
 				ld hl,(textunfilled)
 				ld (hl),EOF				; set EOF marker
 				sbc hl,de				; are we done?
-				jr c,sa3
+				jr c,sa4
 				ld c,SETDMA				; point dma to text
 				call BDOS
 				ld de,FCB				; write record
 				ld c,WRITEF
 				call BDOS
 				or a					; all good?
-				jr z,sa2				; yes, try next
+				jr z,sa3				; yes, try next
 				jp qsorry				; no, something bad happened
-sa2:
+sa3:
 				pop hl					; update text ptr
 				ld de,BUFSIZE
 				add hl,de
 				ex de,hl
-				jr sa1
-sa3: 
+				jr sa2
+sa4: 
 				call fclose				; and close file				jp rstart
 				jp rstart
 fname:
@@ -190,7 +196,7 @@ fexec:
 				call BDOS
 				inc a					; did operation fail?
 				ret nz					; no, all good
-				jp qsorry				; something bad happened
+				jp qhow					; something bad happened
 fdel:
 				ld de,FCB				; delete file
 				ld c,DELETEF

@@ -28,6 +28,14 @@ Additionally there are statements to define and read constant values:
 
 `RESTORE` Resets the `READ` pointer to the first item of the data list, allowing `DATA` values to be re-read.
 
+#### CP/M Specific Statements
+The CP/M version includes two additional statements that allow Tasty Basic programs to be saved 
+to, and loaded from, disk:
+
+`LOAD "filename"` Loads the Tasty Basic (`.TBA`) file with the given _filename_ from the current disk drive into memory. Any existing programs and variables are cleared before the program is loaded.
+
+`SAVE "filename"` Persists the program currently in memory in a file with the given _filename_ on the current disk drive.
+
 ### Functions
 Tasty Basic provides the following functions to read from and write to memory locations and I/O ports:
 
@@ -49,7 +57,6 @@ contain the result on return.
 | --- | --- | --- |
 | CP/M | $0AFE/$0AFF | $0B00 |
 | RomWBW |  $13FE/$13FF | $1400 |
-| Zemu |  $13FE/$13FF | $1400 |
 
 ### Example
 The following example shows the bit summation for a given value:
@@ -96,17 +103,18 @@ The following example shows the bit summation for a given value:
 Note that the example above is CP/M specific. Examples for other platforms can be found in the
 `examples` directory.
 
-## Building the RomWBW image
-Building Tasty Basic requires TASM (Telemark Assembler).
+## Building Tasty Basic
+Building Tasty Basic requires the `uz80as` Z80 assembler ([Giner, 2021](##References)). Alternatively, Windows users can use TASM (Telemark Assembler).
 
-Alternatively, non-Windows users can use the `uz80as` Z80 assembler ([Giner, 2021](##References)).
+### RomWBW version
+Tasty Basic is part of the SBCv2 RomWBW distribution. Please refer to the [RomWBW github repository](https://github.com/wwarthen/RomWBW) for details.
 
-## CP/M version of Tasty Basic
-A CP/M version of Tasty Basic can be built using the `-Dcpm` flag:
+### CP/M version
+The CP/M version of Tasty Basic can be built using the `-Dcpm` flag:
 
 ```tasm.exe -t80 --dcpm tastybasic.asm tbasic.com tastybasic.lst```
 
-The resulting `tbasic.com` executable can be run in CP/M. For example:
+The resulting `tbasic.com` command file can be run in CP/M. For example:
 
 ```
 B>TBASIC ↵
@@ -125,38 +133,11 @@ OK
 B>
 ```
 
-## Running in Z80 Emulator
-Tasty Basic can be run in the Z80 Emulator ([Moore, 2015](##References)) when it is built with
-the `-Dzemu` flag:
-
-```tasm.exe -t80 -g3 -fFF -Dzemu tastybasic.asm tastybasic.bin tastybasic.lst```
-
-Then load the resulting `tastybasic.bin` image in the emulator at address 0, bank 0.
-
-Before running, ensure that the `TTY0` device is configured as following in the Z80 Emulator:
-
-**I/O Devices**
-
-| Device | CRT | TTY | COM | NET | Printer | Spooler |
-|-------:|:---:|:---:|:---:|:---:|:-------:|:-------:|
-| TTY 0  |     |  x  |     |     |         |         |
-
-**I/O Properties for device 0**
-
-|              | Bit | State | Status |
-|--------------|:---:|:-----:|:------:|
-| RxFull       | 1   | 1     | 00     |
-| TxEmpty      | 0   | 1     |        
-| RxFull IntE  | N/A |        
-| TxEmpty IntE | N/A |         
-
-
 ## Example BASIC programs
 
-A small number of example BASIC programs are included in the `examples` directory. Most of
-these programs are from _BASIC COMPUTER GAMES_ ([Ahl, 1978](##References)), and have been
-modified as required to make them work with Tasty Basic.
-
+A small number of example Tasty Basic programs are included in the `examples` directory.
+Most of these programs are from _BASIC COMPUTER GAMES_ ([Ahl, 1978](##References)), and 
+have been modified as required to make them work with Tasty Basic.
 
 ## License
 In line with Wang's (1976) original Tiny Basic source listing and later derived works
@@ -167,8 +148,7 @@ For license details refer to the enclosed [LICENSE](../master/LICENSE) file.
 Ahl, D. H. (Ed.).(1978). _BASIC COMPUTER GAMES_. New York, NY: Workman Publishing  
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  
 Gabbard, D. (2017, October 10). _TinyBASIC for the z80 – TinyBASIC 2.0g._ Retrieved September 29, 2108, from [http://retrodepot.net/?p=274](http://retrodepot.net/?p=274)  
-Giner, J. (2021, August 1). _Micro Z80 assembler - uz80as._ Retrieved September 19, 2021, from [https://jorgicor.niobe.org/uz80as/](https://jorgicor.niobe.org/uz80as/)  
-Moore, W. J. (2015). _Z80 Emulator_ [Computer software]. Retrieved October 6, 2018, from [https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar](https://amaus.org/static/S100/cromemco/emulator/latest.zemuemulator.rar)  
+Giner, J. (2021, August 1). _Micro Z80 assembler - uz80as._ Retrieved September 19, 2021, from [https://jorgicor.niobe.org/uz80as/](https://jorgicor.niobe.org/uz80as/)   
 Rauskolb, P. (1976, December). _DR. WANG'S PALO ALTO TINY BASIC._ Interface Age, (2)1, 92-108. Retrieved from [https://archive.org/stream/InterfaceAge197612/Interface%20Age%201976-12#page/n93/mode/1up](https://archive.org/stream/InterfaceAge197612/Interface%20Age%201976-12#page/n93/mode/1up)  
 Wang, L-C. (1976). _Palo Alto Tiny BASIC._ In J. C. Warren Jr. (Ed.), _Dr. Dobb's Journal of COMPUTER Calisthenics & Orthodontia_ (pp. 129-142). Menlo Park, CA: People's Computer Company  
 Warthen, W. (2021). _RomWBW, Z80/Z180 System Software._ Retrieved Octover 5, 2021, from [https://github.com/wwarthen/RomWBW](https://github.com/wwarthen/RomWBW)

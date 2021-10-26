@@ -35,10 +35,14 @@ OPENF				.equ 0fh				; file open
 CLOSEF				.equ 10h				; file close
 DELETEF				.equ 13h				; file delete
 READF				.equ 14h				; read file record
+WRITEF				.equ 15h				; write file record
 MAKEF				.equ 16h				; make new file
+SETDMA				.equ 1ah				; set DMA address
+EOF				.equ 1ah				; EOF marker
 DMAOFF				.equ 1ah				; set DMA address pointer
 FCB				.equ 5ch				; file control block address
-BUFF				.equ 80h				; input disk buffer address
+DMA				.equ 80h				; disk buffer address
+BUFSIZE				.equ 80h				; disk buffer size
 
 ; FILE CONTROL BLOCK DEFINITIONS
 FCBDN				.equ FCB+0 				; disk name
@@ -80,14 +84,18 @@ load:
 				call clrvars				; and variables
 				call fname				; get filename
 				call fopen				; and open file for reading
+				ld de,DMA
+				ld c,SETDMA				; point dma to default
+				call BDOS
+
 lo1:
 				ld de,FCB				; and read record
 				ld c,READF
 				call BDOS
 				or a					; are we at EOF?
 				jr nz,lo3				; yes, all done
-				ld b,80h				; no, copy from io buffer
-				ld de,BUFF				; to text buffer
+				ld b,BUFSIZE				; no, copy from io buffer
+				ld de,DMA				; to text buffer
 				ld hl,(textunfilled)
 lo2:
 				ld a,(de)				; get char from buffer
@@ -103,7 +111,33 @@ lo2:
 lo3:
 				jp rstart
 save:
-				jp qwhat				; ** TODO **
+				call fname				; ** save **
+				call fdel				; remove any existing file
+				call fmake				; open file for writing
+				ld de,textbegin
+sa1:
+				push de					; save current text ptr
+				ld hl,(textunfilled)
+				ld (hl),EOF				; set EOF marker
+				sbc hl,de				; are we done?
+				jr c,sa3
+				ld c,SETDMA				; point dma to text
+				call BDOS
+				ld de,FCB				; write record
+				ld c,WRITEF
+				call BDOS
+				or a					; all good?
+				jr z,sa2				; yes, try next
+				jp qsorry				; no, something bad happened
+sa2:
+				pop hl					; update text ptr
+				ld de,BUFSIZE
+				add hl,de
+				ex de,hl
+				jr sa1
+sa3: 
+				call fclose				; and close file				jp rstart
+				jp rstart
 fname:
 				call testc				; check filename
 				.db 22h					; is first char a double quote
@@ -160,6 +194,6 @@ fexec:
 fdel:
 				ld de,FCB				; delete file
 				ld c,DELETEF
-				jp BDOS					; ignore any errors				
+				jp BDOS					; ignore any errors			
 bye:
 				jp 0					; does not return!

@@ -39,7 +39,6 @@ TBC_LOC				.equ 0100h
 #ifdef ROMWBW
 #define PLATFORM "ROMWBW"
 TBC_LOC				.equ 0a00h
-		
 #endif
 
 #ifndef PLATFORM
@@ -1749,16 +1748,16 @@ init:
 
 ;*************************************************************
 
-#ifdef ZEMU
-#include			"zemuio.asm"
-#endif
-
 #ifdef ROMWBW
 #include			"romwbwio.asm"
 #endif
 
 #ifdef CPM
 #include			"cpmio.asm"
+#endif
+
+#ifndef PLATFORM
+#include			"zemuio.asm"
 #endif
 
 ;*************************************************************
@@ -1847,7 +1846,7 @@ tab1:									; direct commands
 				dwa(new)
 				.db "CLEAR"
 				dwa(clear)
-#ifndef ZEMU
+#ifdef PLATFORM
 				.db "BYE"
 				dwa(bye)
 #endif

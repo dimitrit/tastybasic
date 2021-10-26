@@ -1137,7 +1137,7 @@ pp1:
 				push bc					; bc = return address
 				ret
 pusha:
-				ld hl,(stacklimit)			; ** PushA **
+				ld hl,stacklimit			; ** PushA **
 				call changesign
 				pop bc					; bc = return address
 				add hl,sp				; is stack near the top?
@@ -1289,7 +1289,7 @@ sorry				.db "SORRY",cr
 ; (SEE NEXT SECTION). "CURRNT" SHOULD POINT TO A 0.
 ;*************************************************************
 rstart:
-				ld sp,(stack)
+				ld sp,stack
 st1:
 				call crlf
 				sub a					; a=0
@@ -1990,7 +1990,7 @@ varbegin			.ds 55					; variable @(0)
 varend				.ds 0					; end of variable area
 buffer				.ds 72					; input buffer
 bufend				.ds 1
-stacklimit			.ds 1
+stacklimit			.ds 0
 				.org TBC_LOC + STACK_OFFSET
 stack				.equ $
 

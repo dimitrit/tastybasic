@@ -31,6 +31,25 @@ BDOS				.equ 05h				; standard cp/m entry
 DCONIO				.equ 06h				; direct console I/O
 INPREQ				.equ 0ffh				; console input request
 
+OPENF				.equ 0fh				; file open
+CLOSEF				.equ 10h				; file close
+DELETEF				.equ 13h				; file delete
+READF				.equ 14h				; read file record
+MAKEF				.equ 16h				; make new file
+DMAOFF				.equ 1ah				; set DMA address pointer
+FCB				.equ 5ch				; file control block address
+BUFF				.equ 80h				; input disk buffer address
+
+; FILE CONTROL BLOCK DEFINITIONS
+FCBDN				.equ FCB+0 				; disk name
+FCBFN				.equ FCB+1 				; file name
+FCBFT				.equ FCB+9 				; disk file type (3 chars)
+FCBRL				.equ FCB+12				; file's current reel number
+FCBRC				.equ FCB+15				; file's record count (0 to 128)
+FCBCR				.equ FCB+32				; current (next) record
+FCBLN				.equ FCB+33				; FCB length
+FTYPE				.db "TBA"				; tasty basic file type
+
 haschar:	
 				push	bc
 				push	de
@@ -55,5 +74,92 @@ putchar:
 				pop	de
 				pop	bc
 				ret
+load:				
+				ld hl,textbegin				; ** load **
+				ld (textunfilled),hl			; clear program text area
+				call clrvars				; and variables
+				call fname				; get filename
+				call fopen				; and open file for reading
+lo1:
+				ld de,FCB				; and read record
+				ld c,READF
+				call BDOS
+				or a					; are we at EOF?
+				jr nz,lo3				; yes, all done
+				ld b,80h				; no, copy from io buffer
+				ld de,BUFF				; to text buffer
+				ld hl,(textunfilled)
+lo2:
+				ld a,(de)				; get char from buffer
+				cp 1ah					; is it EOF?
+				jr z,lo3				; yes, all done
+				ld (hl),a				; copy char to text area
+				inc hl					; and update pointers
+				inc de
+				ld (textunfilled),hl
+				dec b					; end of record?			
+				jr z,lo1				; yes, so try next record
+				jr lo2					; no, copy next char
+lo3:
+				jp rstart
+save:
+				jp qwhat				; ** TODO **
+fname:
+				call testc				; check filename
+				.db 22h					; is first char a double quote
+				.db qwhat-$-1				; what, no?
+				ld hl,FCBFN				; start configuring fcb
+				ld b,22h
+				ld c,8					; max filename length
+fn1:
+				ld a,(de)
+				inc de			   		; bump pointer
+				cp b					; double quote?
+				jr z,fn2
+				ld (hl),a				; copy into fcb
+				inc hl
+				dec c					; check filename length
+				jp z,qhow				; too long
+				jr fn1
+fn2:
+				call endchk
+				ld a,20h				; clear any remaining chars
+				ld (hl),a				; in filename
+				inc hl
+				dec c
+				jr nz,fn2
+				ld b,3					; set file type
+				ld hl,FTYPE
+				ld de,FCBFT
+fn3:
+				ld a,(hl)
+				ld (de),a
+				inc hl
+				inc de
+				dec b
+				jr nz,fn3
+				xor a
+				ld (FCBCR),a				; clear current record
+				ret
+fopen:
+				ld de,FCB				; open file		
+				ld c,OPENF
+				jr fexec
+fclose:
+				ld de,FCB				; close file
+				ld c,CLOSEF
+				jr fexec
+fmake:
+				ld de,FCB				; create new file
+				ld c,MAKEF
+fexec:
+				call BDOS
+				inc a					; did operation fail?
+				ret nz					; no, all good
+				jp qsorry				; something bad happened
+fdel:
+				ld de,FCB				; delete file
+				ld c,DELETEF
+				jp BDOS					; ignore any errors				
 bye:
 				jp 0					; does not return!

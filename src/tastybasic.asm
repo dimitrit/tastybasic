@@ -1876,6 +1876,12 @@ tab2:									; direct/statements
 				dwa(poke)
 				.db "OUT"
 				dwa(outp)
+#ifdef CPM
+				.db "LOAD"
+				dwa(load)
+				.db "SAVE"
+				dwa(save)
+#endif
 datastmt:
 				.db "DATA"
 				dwa(data)

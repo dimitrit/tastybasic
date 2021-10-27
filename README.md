@@ -106,15 +106,15 @@ Note that the example above is CP/M specific. Examples for other platforms can b
 `examples` directory.
 
 ## Building Tasty Basic
-Building Tasty Basic requires the `uz80as` Z80 assembler ([Giner, 2021](##References)). Alternatively, Windows users can use TASM (Telemark Assembler).
+Building Tasty Basic requires the `uz80as` Z80 assembler v1.12 or later ([Giner, 2021](##References)). Alternatively, Windows users can use TASM (Telemark Assembler) ([Anderson, 1998](##References)).
 
 ### RomWBW version
 Tasty Basic is part of the SBCv2 RomWBW distribution. Please refer to the [RomWBW github repository](https://github.com/wwarthen/RomWBW) for details.
 
 ### CP/M version
-The CP/M version of Tasty Basic can be built using the `-Dcpm` flag:
+The CP/M version of Tasty Basic can be built using the `-dCPM` flag:
 
-```tasm.exe -t80 --dcpm tastybasic.asm tbasic.com tastybasic.lst```
+```uz80as -dCPM tastybasic.asm tbasic.com```
 
 The resulting `tbasic.com` command file can be run in CP/M. For example:
 
@@ -148,6 +148,7 @@ For license details refer to the enclosed [LICENSE](../master/LICENSE) file.
 
 ## References
 Ahl, D. H. (Ed.).(1978). _BASIC COMPUTER GAMES_. New York, NY: Workman Publishing  
+Anderson, T. N. (1998). _The Telemark Assembler (TASM) User's Manual, Version 3.1._ Issaquah, WA: Squak Valley Software  
 b1ackmai1er (2018). _SBC V2_. Retrieved  October 6, 2018, from [https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start](https://www.retrobrewcomputers.org/doku.php?id=boards:sbc:sbc_v2:start)  
 Gabbard, D. (2017, October 10). _TinyBASIC for the z80 – TinyBASIC 2.0g._ Retrieved September 29, 2108, from [http://retrodepot.net/?p=274](http://retrodepot.net/?p=274)  
 Giner, J. (2021, August 1). _Micro Z80 assembler - uz80as._ Retrieved September 19, 2021, from [https://jorgicor.niobe.org/uz80as/](https://jorgicor.niobe.org/uz80as/)   

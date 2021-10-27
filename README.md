@@ -36,6 +36,8 @@ to, and loaded from, disk:
 
 `SAVE "filename"` Persists the program currently in memory in a file with the given _filename_ on the current disk drive.
 
+Refer to [Tasty Basic files](examples/README.md) for details of the `.TBA` file format.
+
 ### Functions
 Tasty Basic provides the following functions to read from and write to memory locations and I/O ports:
 

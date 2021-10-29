@@ -23,7 +23,6 @@
 ; -----------------------------------------------------------------------------
 
 USRPTR_OFFSET			.equ 09feh
-USRFUNC_OFFSET			.equ 0a00h
 INTERNAL_OFFSET			.equ 0c00h
 TEXTEND_OFFSET			.equ 07dffh
 STACK_OFFSET			.equ 07fffh

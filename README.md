@@ -51,40 +51,44 @@ Tasty Basic provides the following functions to read from and write to memory lo
 The `USR(i)` function enables interaction with user defined machine routines.
 The entry point for these routines is specified using a platform specific vector
 pointing to a default location as shown below. User defined code may be
-placed elsewhere by updating the vector values. 
+placed elsewhere in memory by updating the vector values. 
 The value _i_ is passed to the routine in the `DE` register, which must also 
 contain the result on return.
 
 | Platform | Vector location | Default value |
 | --- | --- | --- |
-| CP/M | $0AFE/$0AFF | $0B00 |
+| CP/M | $0BFE/$0BFF | $0C00 |
 | RomWBW |  $13FE/$13FF | $1400 |
 
 ### Example
 The following example shows the bit summation for a given value:
 
 ```	
-0B00             	.ORG $0B00	; ie. 2816 dec
-0B00    
-0B00 06 00       	LD B,0
-0B02 7A          	LD A,D
-0B03 CD 0E 0B    	CALL COUNT
-0B06 7B          	LD A,E
-0B07 CD 0E 0B    	CALL COUNT
-0B0A 58          	LD E,B
-0B0B 16 00       	LD D,0
-0B0D C9          	RET
-0B0E             COUNT:
-0B0E B7          	OR A
-0B0F C8          	RET Z
-0B10 CB 47       	BIT 0,A
-0B12 28 01       	JR Z,NEXT
-0B14 04          	INC B
-0B15             NEXT:
-0B15 CB 3F       	SRL A
-0B17 18 F5       	JR COUNT
-0B19             
-0B19             	.END
+  0000             #IFDEF CPM	
+  0C00             	.ORG $0C00	; ie. 3072 dec
+  0C00~            #ELSE
+  0C00~            	.ORG $1400	; ie. 5120 dec
+  0C00             #ENDIF
+  0C00             
+  0C00 06 00       	LD B,0
+  0C02 7A          	LD A,D
+  0C03 CD 0E 0C    	CALL COUNT
+  0C06 7B          	LD A,E
+  0C07 CD 0E 0C    	CALL COUNT
+  0C0A 58          	LD E,B
+  0C0B 16 00       	LD D,0
+  0C0D C9          	RET
+  0C0E             COUNT:
+  0C0E B7          	OR A
+  0C0F C8          	RET Z
+  0C10 CB 47       	BIT 0,A
+  0C12 28 01       	JR Z,NEXT
+  0C14 04          	INC B
+  0C15             NEXT:
+  0C15 CB 3F       	SRL A
+  0C17 18 F5       	JR COUNT
+  0C19             
+  0C19             	.END
 ```
 
 ```
@@ -92,24 +96,26 @@ The following example shows the bit summation for a given value:
 20 REM -- SEE EXAMPLES DIRECTORY FOR OTHER PLATFORMS
 30 FOR I=0 TO 24
 40 READ A
-50 POKE 2816+I,A
+50 POKE 3072+I,A
 60 NEXT I
 70 INPUT P
 80 LET Q=USR(P)
 90 PRINT "THE BIT SUMMATION OF ",#5,P," IS ",#2,Q
 100 GOTO 70
-110 DATA 6,0,122,205,14,11,123,205,14,11,88,22,0,201
+110 DATA 6,0,122,205,14,12,123,205,14,12,88,22,0,201
 120 DATA 183,200,203,71,40,1,4,203,63,24,245
 ```
 
-Note that the example above is CP/M specific. Examples for other platforms can be found in the
-`examples` directory.
+Note that the Tasty Basic program above is CP/M specific. Examples for other platforms can be found
+in the `examples` directory.
 
 ## Building Tasty Basic
-Building Tasty Basic requires the `uz80as` Z80 assembler v1.12 or later ([Giner, 2021](##References)). Alternatively, Windows users can use TASM (Telemark Assembler) ([Anderson, 1998](##References)).
+Building Tasty Basic requires the `uz80as` Z80 assembler v1.12 or later ([Giner, 2021](##References)). 
+Alternatively, Windows users can use TASM (Telemark Assembler) ([Anderson, 1998](##References)).
 
 ### RomWBW version
-Tasty Basic is part of the SBCv2 RomWBW distribution. Please refer to the [RomWBW github repository](https://github.com/wwarthen/RomWBW) for details.
+Tasty Basic is part of the SBCv2 RomWBW distribution. Please refer to the 
+[RomWBW github repository](https://github.com/wwarthen/RomWBW) for details.
 
 ### CP/M version
 The CP/M version of Tasty Basic can be built using the `-dCPM` flag:
@@ -121,8 +127,8 @@ The resulting `tbasic.com` command file can be run in CP/M. For example:
 ```
 B>TBASIC ↵
 
-TASTY BASIC
-29160 BYTES FREE
+CP/M TASTY BASIC
+28902 BYTES FREE
 
 OK
 >10 PRINT "HELLO WORLD ", ↵

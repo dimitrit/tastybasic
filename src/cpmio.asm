@@ -21,16 +21,15 @@
 ; <https://github.com/dimitrit/tastybasic/>.
 ; -----------------------------------------------------------------------------
 
-USRPTR_OFFSET			.equ 09feh
-USRFUNC_OFFSET			.equ 0a00h
-INTERNAL_OFFSET			.equ 0b00h
+USRPTR_OFFSET			.equ 0afeh
+INTERNAL_OFFSET			.equ 0c00h
 TEXTEND_OFFSET			.equ 07cffh
 STACK_OFFSET			.equ 07effh
 
 BDOS				.equ 05h				; standard cp/m entry
 DCONIO				.equ 06h				; direct console I/O
 INPREQ				.equ 0ffh				; console input request
-
+TERMCPM				.equ 0
 OPENF				.equ 0fh				; file open
 CLOSEF				.equ 10h				; file close
 DELETEF				.equ 13h				; file delete
@@ -147,7 +146,7 @@ sa4:
 fname:
 				call testc				; check filename
 				.db 22h					; is first char a double quote
-				.db qwhat-$-1				; what, no?
+				.db fn4-$-1				; no, so fail
 				ld hl,FCBFN				; start configuring fcb
 				ld b,22h
 				ld c,8					; max filename length
@@ -181,6 +180,8 @@ fn3:
 				xor a
 				ld (FCBCR),a				; clear current record
 				ret
+fn4:
+				jp qwhat
 fopen:
 				ld de,FCB				; open file		
 				ld c,OPENF
@@ -202,4 +203,5 @@ fdel:
 				ld c,DELETEF
 				jp BDOS					; ignore any errors			
 bye:
-				jp 0					; does not return!
+				ld c,TERMCPM				; does not return!
+				jp BDOS					

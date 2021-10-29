@@ -1731,6 +1731,10 @@ nx2:
 init:
 				ld hl,start				; initialise random pointer
 				ld (rndptr),hl
+				ld hl,usrfunc				; initialise usr func pointer
+				ld (usrptr),hl
+				ld a,0c9h				; initialise usr func (RET)
+				ld (usrfunc),a
 				ld hl,textbegin				; initialise text area pointers
 				ld (textunfilled),hl
 				ld (ocsw),a				; enable output control switch
@@ -1970,10 +1974,13 @@ ex5:
 
 LST_ROM:			; all the above _can_ be in rom
 				; all following *must* be in ram
+padding				.equ (TBC_LOC + USRPTR_OFFSET - $)
+				.echo "TASTYBASIC ROM padding: "
+				.echo padding
+				.echo " bytes.\n"
 				.org TBC_LOC + USRPTR_OFFSET
-usrptr				.dw usrfunc				; -> user defined function area
-				.org TBC_LOC + USRFUNC_OFFSET
-usrfunc				jp qhow					; start of user defined function area
+usrptr				.ds 2					; -> user defined function area
+usrfunc				.equ $					; start of user defined function area
 				.org TBC_LOC + INTERNAL_OFFSET		; start of state
 ocsw				.ds 1					; output control switch
 current				.ds 2					; points to current line
@@ -1992,10 +1999,10 @@ textbegin			.ds 2					; start of text save area
 				.org TBC_LOC + TEXTEND_OFFSET
 textend				.ds 0					; end of text area
 varbegin			.ds 55					; variable @(0)
-varend				.ds 0					; end of variable area
+varend				.equ $					; end of variable area
 buffer				.ds 72					; input buffer
 bufend				.ds 1
-stacklimit			.ds 0
+stacklimit			.equ $
 				.org TBC_LOC + STACK_OFFSET
 stack				.equ $
 

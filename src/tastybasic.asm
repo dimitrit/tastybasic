@@ -30,6 +30,7 @@ lf				.equ 0ah
 cr				.equ 0dh
 ctrlo				.equ 0fh
 ctrlu				.equ 15h
+space				.equ 20h
 
 #ifdef CPM
 #define PLATFORM "CP/M"
@@ -70,7 +71,7 @@ tc1:
 
 skipspace:
 				ld a,(de)				; ** SkipSpace **
-				cp ' '					; ignore spaces
+				cp space				; ignore spaces
 				ret nz					; in text (where de points)
 				inc de					; and return the first non-blank
 				jp skipspace				; character in A
@@ -889,9 +890,13 @@ gl3:
 				cp buffer & 0ffh			; if there are any?
 				jr z,gl4				; no, redo whole line
 				dec de					; yes, back pointer
-				ld a,08h				; and echo a backspace
+				ld a,bs					; and echo a 'destructive
+				call outc				; backspace' by sending
+				ld a,space				; a three character seq:
+				call outc				; backspace,space,backspace 
+				ld a,bs
 				call outc
-				jr gl1					; and get next character
+				jr gl1					; then get next character
 gl4:
 				call crlf				; redo entire line
 				ld a,'>'
@@ -1028,7 +1033,7 @@ pn4:
 				ld a,c					; look at space count
 				or a
 				jp m,pn5				; no leading spaces
-				ld a,' '				; print a leading space
+				ld a,space				; print a leading space
 				call outc
 				jr pn4					; any more?
 pn5:
@@ -1074,7 +1079,7 @@ printline:
 				inc de
 				ld c,04h				; print 4 digit line number
 				call printnum
-				ld a,' '				; followed by a space
+				ld a,space				; followed by a space
 				call outc
 				sub a					; and the the rest
 				call printstr
@@ -1242,7 +1247,7 @@ ahow:
 
 welcome				
 #ifdef PLATFORM
-				.db PLATFORM," "
+				.db PLATFORM,space
 #endif
 				.db "TASTY BASIC"
 #ifdef VERSION

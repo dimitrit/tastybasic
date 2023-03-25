@@ -98,8 +98,6 @@ lo1:
 				ld hl,(textunfilled)
 lo2:
 				ld a,(de)				; get char from buffer
-				cp 1ah					; is it EOF?
-				jr z,lo3				; yes, all done
 				ld (hl),a				; copy char to text area
 				inc hl					; and update pointers
 				inc de
@@ -108,6 +106,14 @@ lo2:
 				jr z,lo1				; yes, so try next record
 				jr lo2					; no, copy next char
 lo3:
+				ld hl,(textunfilled)			; find end of text
+lo4:				
+				ld a,(hl)				; get char at pointer
+				dec hl					; go back 1 char
+				or a					; was it 0?
+				jr z,lo4				; yes, check prev
+				inc hl					; go past last real char
+				ld (textunfilled),hl			; and save pointer
 				jp rstart
 save:
 				call fname				; ** save **
@@ -117,6 +123,15 @@ save:
 				jr nz,sa1				; yes, try to save it
 				jp qhow					; no, nothing to be done
 sa1:
+				call size				; calculate size of free memory
+				ld b,h
+				ld c,l
+				ld hl,(textunfilled)			; then clear all memory between
+				ld d,h					; current end of text pointer and
+				ld e,l					; end of text area
+				inc de
+				ld (hl),0
+				ldir
 				call fdel				; remove any existing file
 				call fmake				; open new file for writing
 				ld de,textbegin				; initialise text ptr
@@ -141,7 +156,7 @@ sa3:
 				ex de,hl
 				jr sa2
 sa4: 
-				call fclose				; and close file				jp rstart
+				call fclose				; and close file
 				jp rstart
 fname:
 				call testc				; check filename

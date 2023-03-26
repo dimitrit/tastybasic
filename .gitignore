@@ -5,6 +5,7 @@ diskdefs
 *.bin
 *.lst
 *.img
+*.DSK
 *.obj
 .idea
 .DS_Store
